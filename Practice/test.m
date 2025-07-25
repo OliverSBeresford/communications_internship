@@ -1,0 +1,1 @@
+disp(fibonacci(10));
