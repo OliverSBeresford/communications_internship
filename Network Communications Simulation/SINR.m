@@ -5,7 +5,7 @@ function coverage = SINR(data)
     end
     
     % Returns the SINR (signal strength) for a data.receiver
-    [station, stationIndex] = nearestLOS(data.receiver, data.baseStations, data.stationCount);
+    [station, stationIndex] = nearestLOS(data);
     if stationIndex == -1
         coverage = 0;
         return;
