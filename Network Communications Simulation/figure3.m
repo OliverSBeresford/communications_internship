@@ -4,7 +4,7 @@ simulations = 1e5;
 results = zeros(1, simulations);
 
 % These are all the parameters
-size = 30;
+size = 50;
 lambdaBase = 0.1;
 lambdaAve = 1;
 lambdaSt = 1;
@@ -13,7 +13,7 @@ sourcePower = 1;
 alpha = 4;
 A = 1;
 fadingMean = 1;
-noisePower = 1e-9;
+noisePower = 0;
 
 % Calculate SINR (simulations) times
 for ii = 1:simulations
