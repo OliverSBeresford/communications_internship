@@ -1,6 +1,12 @@
-function power = powerNLOS(sourcePower, receiver, transmitter, fadingMean, penetrationLoss, avenues, streets)
+function power = powerNLOS(data, transmitter)
+    % Data must come from the custom class SimulationData
+    arguments
+        data(1, 1) {mustBeA(data, 'SimulationData')}
+        transmitter {mustBeVector}
+    end
+
     % Number of roads crossed = number of buildings penetrated
-    buildings = 1 + numRoadsCrossed(receiver, transmitter, avenues, streets);
+    buildings = 1 + numRoadsCrossed(data.receiver, transmitter, data.avenues, data.streets);
     
-    power = sourcePower * smallScaleFading(fadingMean) * penetrationLoss ^ buildings;
+    power = data.sourcePower * smallScaleFading(data.fadingMean) * data.penetrationLoss ^ buildings;
 end

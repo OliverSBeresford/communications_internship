@@ -17,9 +17,8 @@ noisePower = 0;
 
 % Calculate SINR (simulations) times
 for ii = 1:simulations
-    receiver = [0 0];
-    [avenues, streets, stations, stationCount] = manhattan(size, lambdaBase, lambdaSt, lambdaAve, plotGraph);
-    result = SINR(sourcePower, receiver, alpha, A, fadingMean, noisePower, stations, stationCount);
+    data = SimulationData(size=size, lambdaBase=lambdaBase, lambdaAve=lambdaAve, lambdaSt=lambdaSt, plotGraph=plotGraph, sourcePower=sourcePower, alpha=alpha, A=A, fadingMean=fadingMean, noisePower=noisePower, doManhattan=true);
+    result = SINR(data);
     results(ii) = 10 * log10(result);
 end
 

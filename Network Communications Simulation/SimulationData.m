@@ -5,7 +5,7 @@ classdef SimulationData
         alpha(1, 1) {mustBeNumeric};
         A(1, 1) {mustBeNumeric};
         fadingMean(1, 1) {mustBeNumeric};
-        noiseP(1, 1) {mustBeNumeric};
+        noisePower(1, 1) {mustBeNumeric};
         baseStations(:, 2) {mustBeMatrix, mustBeNumeric}
         stationCount(1, 1) {mustBeNumeric}
         penetrationLoss(1, 1) {mustBeNumeric, mustBeInRange(penetrationLoss, 0, 1)};
@@ -27,7 +27,7 @@ classdef SimulationData
                 options.alpha(1, 1) {mustBeNumeric} = 4;
                 options.A(1, 1) {mustBeNumeric} = 1;
                 options.fadingMean(1, 1) {mustBeNumeric} = 1;
-                options.noiseP(1, 1) {mustBeNumeric} = 0;
+                options.noisePower(1, 1) {mustBeNumeric} = 0;
                 options.baseStations(:, 2) {mustBeMatrix, mustBeNumeric} = [];
                 options.stationCount(1, 1) {mustBeNumeric} = 0;
                 options.penetrationLoss(1, 1) {mustBeNumeric, mustBeInRange(options.penetrationLoss, 0, 1)} = 1;
@@ -52,8 +52,9 @@ classdef SimulationData
             obj.alpha = options.alpha;
             obj.A = options.A;
             obj.fadingMean = options.fadingMean;
-            obj.noiseP = options.noiseP;
+            obj.noisePower = options.noisePower;
             obj.penetrationLoss = options.penetrationLoss;
+            
             % If they provide true or if any values are empty, do manhattan
             doManhattan = options.doManhattan || isempty(options.avenues) || isempty(options.streets) || isempty(options.baseStations);
             if doManhattan
