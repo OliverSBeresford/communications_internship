@@ -1,4 +1,4 @@
-classdef SimulationData
+classdef SimulationData < handle
     properties 
         sourcePower(1, 1) {mustBeNumeric};
         receiver {mustBeVector} = [0 0];
@@ -16,6 +16,8 @@ classdef SimulationData
         lambdaSt(1, 1) {mustBeNumeric}
         useNLOS(1, 1) {mustBeNumericOrLogical}
         useDiffraction(1, 1) {mustBeNumericOrLogical}
+        size(1, 1) {mustBeNumeric}
+        plotGraph(1, 1) {mustBeNumericOrLogical}
     end
     methods
         function obj = SimulationData(options)
@@ -43,6 +45,8 @@ classdef SimulationData
             end
             % Setting the object's properties
             obj.lambdaBase = options.lambdaBase;
+            obj.size = options.size;
+            obj.plotGraph = options.plotGraph;
             obj.lambdaAve = options.lambdaAve;
             obj.lambdaSt = options.lambdaSt;
             obj.useNLOS = options.useNLOS;
@@ -54,22 +58,28 @@ classdef SimulationData
             obj.fadingMean = options.fadingMean;
             obj.noisePower = options.noisePower;
             obj.penetrationLoss = options.penetrationLoss;
-            
+
             % If they provide true or if any values are empty, do manhattan
             doManhattan = options.doManhattan || isempty(options.avenues) || isempty(options.streets) || isempty(options.baseStations);
             if doManhattan
-                [obj.avenues, obj.streets, obj.baseStations, obj.stationCount] = ...
-                    manhattan(options.size, ...
-                        options.lambdaBase, ...
-                        options.lambdaSt, ...
-                        options.lambdaAve, ...
-                        options.plotGraph);
+                obj.runManhattan();
             else
                 obj.avenues = options.avenues;
                 obj.streets = options.streets;
                 obj.baseStations = options.baseStations;
                 obj.stationCount = options.stationCount;
             end
+        end
+
+        % This method runs the MPLP and stores the result in properties
+        function runManhattan(obj)
+            [obj.avenues, obj.streets, obj.baseStations, obj.stationCount] = manhattan( ...
+                    obj.size, ...
+                    obj.lambdaBase, ...
+                    obj.lambdaSt, ...
+                    obj.lambdaAve, ...
+                    obj.plotGraph ...
+             );
         end
     end
 end
