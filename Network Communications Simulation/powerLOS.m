@@ -1,6 +1,6 @@
-function power = powerLOS(sourcePower, receiver, transmitter, alpha, A, fadingMean)
+function power = powerLOS(data, transmitter)
     % Calculates power received from an LOS base station from the formula
-    distance = getDistance(receiver, transmitter);
-    pathLoss = A * distance ^ (-alpha);
-    power = sourcePower * smallScaleFading(fadingMean) * pathLoss;
+    distance = getDistance(data.receiver, transmitter);
+    pathLoss = data.A * distance ^ (-data.alpha);
+    power = data.sourcePower * smallScaleFading(data.fadingMean) * pathLoss;
 end

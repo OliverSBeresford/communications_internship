@@ -6,7 +6,7 @@ function power = powerNLOS(data, transmitter)
     end
 
     % Number of roads crossed = number of buildings penetrated
-    buildings = 1 + numRoadsCrossed(data.receiver, transmitter, data.avenues, data.streets);
+    buildings = 1 + numRoadsCrossed(data, transmitter);
     
     power = data.sourcePower * smallScaleFading(data.fadingMean) * data.penetrationLoss ^ buildings;
 end

@@ -12,7 +12,7 @@ function coverage = SINR(data)
     end
     
     % Calculates the power received from the connected base station
-    usefulPower = powerLOS(data.sourcePower, data.receiver, station, data.alpha, data.A, data.fadingMean);
+    usefulPower = powerLOS(data, station);
     
     totalInterference = 0;
     for ii = 1:data.stationCount
@@ -21,7 +21,7 @@ function coverage = SINR(data)
         notSource = ii ~= stationIndex;
         if sameStreet && notSource
             % Add the interference from a BS to the total interference
-            totalInterference = totalInterference + powerLOS(data.sourcePower, data.receiver, baseStation, data.alpha, data.A, data.fadingMean);
+            totalInterference = totalInterference + powerLOS(data, baseStation);
         elseif notSource && data.useNLOS
             % Add the interference from this NLOS base station
             totalInterference = totalInterference + powerNLOS(data, baseStation);
