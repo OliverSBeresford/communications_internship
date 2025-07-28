@@ -1,3 +1,5 @@
+%%%%%%%%%%%%%%% This is just graphing the 1d simulation %%%%%%%%%%%%%%%%%%
+
 simulations = 1e3;
 
 % This is where all the SINR results are stored
