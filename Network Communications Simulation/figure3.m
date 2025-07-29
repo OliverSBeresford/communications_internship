@@ -1,6 +1,6 @@
 %%%%%%%%%%%%%%% This is just graphing the 1d simulation %%%%%%%%%%%%%%%%%%
 
-simulations = 1e3;
+simulations = 1e5;
 
 % This is where all the SINR results are stored
 results = zeros(1, simulations);
@@ -31,7 +31,7 @@ end
 
 % Plot the CDF histogram
 figure(1)
-cdfGraph = histogram(results, 100, "Normalization", "cdf");
+cdfGraph = histogram(results, 300, "Normalization", "cdf");
 title('Coverage probability CDF');
 xlabel('\theta');
 ylabel('Probability');
