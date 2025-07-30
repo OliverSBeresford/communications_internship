@@ -6,9 +6,14 @@ function [station, closestIndex] = nearestLOS(data)
 
     closestIndex = -1;
     closestDistance = -1;
+
+    % Creating variable to store current base station coordinates
+    baseStation = [0 0];
     
     for ii = 1:data.stationCount
-        baseStation = data.baseStations(ii, :);
+        % Updating the variable that stores the coordinates
+        baseStation(1) = data.baseStations(ii, 1);
+        baseStation(2) = data.baseStations(ii, 2);
 
         % Checks if the base station is on the same street as the user
         sameStreet = baseStation(1) == data.receiver(1) || baseStation(2) == data.receiver(2);
