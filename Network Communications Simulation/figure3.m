@@ -42,6 +42,8 @@ figure(2)
 ccdfX = cdfGraph.BinEdges(1:end - 1) + cdfGraph.BinWidth / 2;
 ccdfY = 1 - cdfGraph.Values;
 plot(ccdfX, ccdfY);
+
+% Label the graph
 title('Coverage probability CCDF');
 xlabel('\theta');
 ylabel('Probability');
