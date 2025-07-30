@@ -6,7 +6,7 @@ classdef SimulationData < handle
         A(1, 1) {mustBeNumeric};
         fadingMean(1, 1) {mustBeNumeric};
         noisePower(1, 1) {mustBeNumeric};
-        baseStations(:, 2) {mustBeMatrix, mustBeNumeric}
+        baseStations(:, 2) {mustBeMatrix, mustBeNumeric} 
         stationCount(1, 1) {mustBeNumeric}
         penetrationLoss(1, 1) {mustBeNumeric, mustBeInRange(penetrationLoss, 0, 1)};
         avenues {mustBeMatrix}
@@ -17,7 +17,7 @@ classdef SimulationData < handle
         useNLOS(1, 1) {mustBeNumericOrLogical}
         useDiffraction(1, 1) {mustBeNumericOrLogical}
         size(1, 1) {mustBeNumeric}
-        plotGraph(1, 1) {mustBeNumericOrLogical}
+        pathLossNLOS(1, 1) {mustBeNumericOrLogical}
     end
     methods
         function obj = SimulationData(options)
@@ -39,14 +39,13 @@ classdef SimulationData < handle
                 options.lambdaBase(1, 1) {mustBeNumeric} = 0.1;
                 options.lambdaAve(1, 1) {mustBeNumeric} = 1;
                 options.lambdaSt(1, 1) {mustBeNumeric} = 1;
-                options.plotGraph(1, 1) {mustBeNumericOrLogical} = false;
                 options.useNLOS(1, 1) {mustBeNumericOrLogical} = false;
                 options.useDiffraction(1, 1) {mustBeNumericOrLogical} = false;
+                options.pathLossNLOS(1, 1) {mustBeNumericOrLogical} = false;
             end
             % Setting the object's properties
             obj.lambdaBase = options.lambdaBase;
             obj.size = options.size;
-            obj.plotGraph = options.plotGraph;
             obj.lambdaAve = options.lambdaAve;
             obj.lambdaSt = options.lambdaSt;
             obj.useNLOS = options.useNLOS;
@@ -58,6 +57,7 @@ classdef SimulationData < handle
             obj.fadingMean = options.fadingMean;
             obj.noisePower = options.noisePower;
             obj.penetrationLoss = options.penetrationLoss;
+            obj.pathLossNLOS = options.pathLossNLOS;
 
             % If they provide true or if any values are empty, do manhattan
             doManhattan = options.doManhattan || isempty(options.avenues) || isempty(options.streets) || isempty(options.baseStations);
@@ -77,9 +77,34 @@ classdef SimulationData < handle
                     obj.size, ...
                     obj.lambdaBase, ...
                     obj.lambdaSt, ...
-                    obj.lambdaAve, ...
-                    obj.plotGraph ...
-             );
+                    obj.lambdaAve ...
+            );
+        end
+
+        function drawManhattan(obj)
+            % If you can't draw the graph, return
+            if isempty(obj.baseStations) || isempty(obj.avenues) || isempty(obj.streets)
+                return;
+            end
+
+            %% Draw the manhattan graph
+            hold on
+    
+            % Each avenue (North-South) and street (East-West)
+            xline(obj.avenues);
+            yline(obj.streets);
+            
+            % Center point (receiver)
+            plot(0, 0, "r o");
+            
+            % Limiting the viewport to a square of size squareSize
+            xlim([-(obj.size / 2), obj.size / 2]);
+            ylim([-(obj.size / 2), obj.size / 2]);
+    
+            % Draw points
+            scatter(obj.baseStations(:, 1), obj.baseStations(:, 2), "blue", "x")
+            
+            hold off
         end
     end
 end

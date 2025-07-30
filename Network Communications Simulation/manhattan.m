@@ -1,4 +1,4 @@
-function [avenues, streets, allStations, stationCount] = manhattan(size, lambdaBase, lambdaStreet, lambdaAvenue, plotGraph)
+function [avenues, streets, allStations, stationCount] = manhattan(size, lambdaBase, lambdaStreet, lambdaAvenue)
     % Homogeneous Poisson-Point Processes
     numAvenues = poissrnd(size * lambdaAvenue);
     numStreets = poissrnd(size * lambdaStreet);
@@ -49,26 +49,5 @@ function [avenues, streets, allStations, stationCount] = manhattan(size, lambdaB
         % Updating main matrix
         allStations(index:index + thisStCount - 1, :) = stations;
         index = index + thisStCount;
-    end
-    
-    % Drawing the avenues for a visual
-    if plotGraph
-        hold on
-    
-        % Each avenue (North-South) and street (East-West)
-        xline(avenues);
-        yline(streets);
-        
-        % Center point (receiver)
-        plot(0, 0, "r o");
-        
-        % Limiting the viewport to a square of size squareSize
-        xlim([-(size / 2), size / 2]);
-        ylim([-(size / 2), size / 2]);
-
-        % Draw points
-        scatter(allStations(:, 1), allStations(:, 2), "blue", "x")
-        
-        hold off
     end
 end
