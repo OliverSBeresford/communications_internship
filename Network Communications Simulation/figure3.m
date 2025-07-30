@@ -1,6 +1,6 @@
 %%%%%%%%%%%%%%% This is just graphing the 1d simulation %%%%%%%%%%%%%%%%%%
 
-simulations = 1e5;
+simulations = 1e4;
 
 % This is where all the SINR results are stored
 results = zeros(1, simulations);
@@ -18,7 +18,8 @@ data = SimulationData( ...
     A=1, ...
     fadingMean=1, ...
     noisePower=0, ...
-    doManhattan=true ...
+    doManhattan=true, ...
+    penetrationLoss=0 ...
 );
 
 % Calculate SINR (simulations) times
@@ -31,7 +32,7 @@ end
 
 % Plot the CDF histogram
 figure(1)
-cdfGraph = histogram(results, 300, "Normalization", "cdf");
+cdfGraph = histogram(results, 300, Normalization="cdf");
 title('Coverage probability CDF');
 xlabel('\theta');
 ylabel('Probability');
