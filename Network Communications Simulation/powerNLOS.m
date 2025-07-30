@@ -8,6 +8,11 @@ function power = powerNLOS(data, transmitter)
     % Number of roads crossed = number of buildings penetrated
     buildings = 1 + numRoadsCrossed(data, transmitter);
     
+    % Done if you don't need to calculate path loss
+    if ~data.pathLossNLOS
+        return
+    end
+    
     % Calculate path loss
     distance = getDistance(data.receiver, transmitter);
     pathLoss = data.A * distance ^ (-data.alpha);
