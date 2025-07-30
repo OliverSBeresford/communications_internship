@@ -3,6 +3,9 @@ simulations = 1e4;
 kValues = 10.^(-1:-1:-5);
 colors = [0 0 0; 0.25 0 0; 0.5 0 0; 0.75 0 0; 1 0 0];
 
+% Number of bins for the histogram
+numBins = 300;
+
 % This is where all the SINR results are stored
 results = zeros(length(kValues) + 1, simulations);
 
@@ -34,7 +37,7 @@ end
 figure(1)
 hold on
 
-[x, y] = CCDF(results(1, :));
+[x, y] = CCDF(results(1, :), numBins);
 
 % Plot the 1d graph
 plot(x, y, Color='b');
@@ -51,7 +54,7 @@ for ii = 1:length(kValues)
     end
     
     % Plot the CCDF graph for this K value
-    [x, y] = CCDF(results(ii + 1, :));
+    [x, y] = CCDF(results(ii + 1, :), numBins);
 
     % Plot the graph
     plot(x, y, Color=colors(ii, :));
