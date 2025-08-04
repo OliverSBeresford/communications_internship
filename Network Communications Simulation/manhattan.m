@@ -1,4 +1,4 @@
-function [avenues, streets, allStations, stationCount] = manhattan(size, lambdaBase, lambdaStreet, lambdaAvenue)
+function [avenues, streets, allStations, stationCount, aveCounts, stCounts] = manhattan(size, lambdaBase, lambdaStreet, lambdaAvenue)
     % Homogeneous Poisson-Point Processes
     numAvenues = poissrnd(size * lambdaAvenue);
     numStreets = poissrnd(size * lambdaStreet);

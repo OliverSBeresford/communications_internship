@@ -19,6 +19,8 @@ classdef SimulationData < handle
         size(1, 1) {mustBeNumeric}
         pathLossNLOS(1, 1) {mustBeNumericOrLogical}
         diffractionOrder(1, 1) {mustBeNumeric}
+        aveCounts {mustBeVector(aveCounts, 'allow-all-empties')} = [];
+        stCounts {mustBeVector(stCounts, 'allow-all-empties')} = [];
     end
     methods
         function obj = SimulationData(options)
@@ -44,6 +46,8 @@ classdef SimulationData < handle
                 options.useDiffraction(1, 1) {mustBeNumericOrLogical} = false;
                 options.pathLossNLOS(1, 1) {mustBeNumericOrLogical} = false;
                 options.diffractionOrder(1, 1) {mustBeNumeric} = 0;
+                options.aveCounts {mustBeVector(options.aveCounts, 'allow-all-empties')} = [];
+                options.stCounts {mustBeVector(options.stCounts, 'allow-all-empties')} = [];
             end
             % Setting the object's properties
             obj.lambdaBase = options.lambdaBase;
@@ -64,6 +68,14 @@ classdef SimulationData < handle
 
             % If they provide true or if any values are empty, do manhattan
             doManhattan = options.doManhattan || isempty(options.avenues) || isempty(options.streets) || isempty(options.baseStations);
+            doManhattan = doManhattan || isempty(options.aveCounts) || isempty(options.stCounts);
+            
+            % If they tried not to run the MPLP and had to anyway
+            if doManhattan && ~options.doManhattan
+                disp('Not enough parameters provided. Running MPLP.');
+            end
+
+            % Run MPLP or set properties to provided values
             if doManhattan
                 obj.runManhattan();
             else
@@ -71,12 +83,14 @@ classdef SimulationData < handle
                 obj.streets = options.streets;
                 obj.baseStations = options.baseStations;
                 obj.stationCount = options.stationCount;
+                obj.aveCounts = options.aveCounts;
+                obj.stCounts = options.stCounts;
             end
         end
 
         % This method runs the MPLP and stores the result in properties
         function runManhattan(obj)
-            [obj.avenues, obj.streets, obj.baseStations, obj.stationCount] = manhattan( ...
+            [obj.avenues, obj.streets, obj.baseStations, obj.stationCount, obj.aveCounts, obj.stCounts] = manhattan( ...
                     obj.size, ...
                     obj.lambdaBase, ...
                     obj.lambdaSt, ...
