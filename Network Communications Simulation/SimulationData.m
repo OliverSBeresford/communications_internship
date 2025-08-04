@@ -18,6 +18,7 @@ classdef SimulationData < handle
         useDiffraction(1, 1) {mustBeNumericOrLogical}
         size(1, 1) {mustBeNumeric}
         pathLossNLOS(1, 1) {mustBeNumericOrLogical}
+        diffractionOrder(1, 1) {mustBeNumeric}
     end
     methods
         function obj = SimulationData(options)
@@ -42,6 +43,7 @@ classdef SimulationData < handle
                 options.useNLOS(1, 1) {mustBeNumericOrLogical} = false;
                 options.useDiffraction(1, 1) {mustBeNumericOrLogical} = false;
                 options.pathLossNLOS(1, 1) {mustBeNumericOrLogical} = false;
+                options.diffractionOrder(1, 1) {mustBeNumeric} = 0;
             end
             % Setting the object's properties
             obj.lambdaBase = options.lambdaBase;
@@ -58,6 +60,7 @@ classdef SimulationData < handle
             obj.noisePower = options.noisePower;
             obj.penetrationLoss = options.penetrationLoss;
             obj.pathLossNLOS = options.pathLossNLOS;
+            obj.diffractionOrder = options.diffractionOrder;
 
             % If they provide true or if any values are empty, do manhattan
             doManhattan = options.doManhattan || isempty(options.avenues) || isempty(options.streets) || isempty(options.baseStations);
