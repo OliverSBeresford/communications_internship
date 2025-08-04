@@ -3,7 +3,10 @@ function numRoads = numRoadsCrossed(data, transmitter)
     numRoads = 0;
 
     % Store the coordinates of data.receiver and transmitter in variables
-    [xReceive, yReceive, xTransmit, yTransmit] = deal(data.receiver(1), data.receiver(2), transmitter(1), transmitter(2));
+    xReceive = data.receiver(1);
+    yReceive = data.receiver(2);
+    xTransmit = transmitter(1);
+    yTransmit = transmitter(2);
     
     % Counting up all the vertical roads crossed
     for ave = data.avenues
