@@ -1,13 +1,15 @@
 simulations = 1e4;
 
-kValues = 10.^(-1:-1:-5);
-colors = [0 0 0; 0.25 0 0; 0.5 0 0; 0.75 0 0; 1 0 0];
+colors = [1 0 0; 0.5 0 0; 0 0 0];
+
+% Names for the graph
+names = ["1D Network", "2D with NLOS", "2D with NLOS and Diffraction"];
 
 % Number of bins for the histogram
-numBins = 300;
+numBins = 1000;
 
 % This is where all the SINR results are stored
-results = zeros(length(kValues) + 1, simulations);
+results = zeros(3, simulations);
 
 % Initialize the object that stores the data in intermediate steps
 % Provide all the parameters to SimulationData
@@ -23,47 +25,40 @@ data = SimulationData( ...
     fadingMean=1, ...
     noisePower=0, ...
     doManhattan=true, ...
-    pathLossNLOS=true ...
+    pathLossNLOS=false ...
 );
 
-% Calculate SINR (simulations) times for the 1d network
-for j = 1:simulations
-    data.runManhattan();
-    result = SINR(data);
-    results(1, j) = 10 * log10(result);
-end
-
-% Plot the CCDF graph for 1d
-figure(1)
 hold on
 
-[x, y] = CCDF(results(1, :), numBins);
-
-% Plot the 1d graph
-plot(x, y, Color='b');
-
 % Plot each line for different K values
-data.useNLOS = true;
-data.diffractionOrder = 1;
-for ii = 1:length(kValues)
-    % Set the new K value each iteration
-    data.penetrationLoss = kValues(ii);
+for ii = 1:3
+    % ii = 1: Just LOS (1D simulation)
+    % ii = 2: LOS and NLOS interference (not including diffraction)
+    % ii = 3: LOS, NLOS, and NLOS diffraction interference
+    if ii == 2
+        data.useNLOS = true;
+        data.penetrationLoss = 0.1;
+    elseif ii == 3
+        data.diffractionOrder = 1;
+    end
+
     for j = 1:simulations
         data.runManhattan();
         result = SINR(data);
-        results(ii + 1, j) = 10 * log10(result);
+        results(ii, j) = 10 * log10(result);
     end
     
     % Plot the CCDF graph for this K value
-    [x, y] = CCDF(results(ii + 1, :), numBins);
+    [x, y] = CCDF(results(ii, :), numBins);
 
     % Plot the graph
-    plot(x, y, Color=colors(ii, :));
+    plot(x, y, Color=colors(ii, :), DisplayName=names(ii));
 end
 
 % Label the graph
 title('Coverage probability CCDF');
 xlabel('\theta');
 ylabel('Probability');
+legend();
 
 hold off

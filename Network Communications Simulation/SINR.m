@@ -25,7 +25,7 @@ function coverage = SINR(data)
 
         sameStreet = baseStation(1) == data.receiver(1) || baseStation(2) == data.receiver(2);
         notSource = ii ~= stationIndex;
-        
+
         if sameStreet && notSource
             % Add the interference from a LOS BS to the total interference
             totalInterference = totalInterference + powerLOS(data, baseStation);
@@ -33,6 +33,11 @@ function coverage = SINR(data)
             % Add the interference from this NLOS base station
             totalInterference = totalInterference + powerNLOS(data, baseStation);
         end
+    end
+
+    % Add power from diffraction
+    if data.diffractionOrder > 0
+        totalInterference = totalInterference + diffractionPower(data);
     end
     
     % Get SINR value using the formula

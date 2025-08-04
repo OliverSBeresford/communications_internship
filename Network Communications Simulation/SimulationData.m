@@ -21,6 +21,7 @@ classdef SimulationData < handle
         diffractionOrder(1, 1) {mustBeNumeric}
         aveCounts {mustBeVector(aveCounts, 'allow-all-empties')} = [];
         stCounts {mustBeVector(stCounts, 'allow-all-empties')} = [];
+        q90 = sqrt(0.031 / (4 * pi));
     end
     methods
         function obj = SimulationData(options)
