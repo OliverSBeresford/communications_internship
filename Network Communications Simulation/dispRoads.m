@@ -1,8 +1,7 @@
-% 1. Read your OSM data into a geospatial table
+% Read OSM data into a geospatial table
 GT = readgeotable("map.osm", "Layer","points");
 
-% 2. Choose a suitable Projected CRS (e.g., WGS 84 / UTM zone 19N)
-%    You would choose the EPSG code that corresponds to your geographic area.
+% Projected CRS
 projCRS = projcrs(32619);
 
 % 3. Extract latitude and longitude from each geolineshape and project
@@ -29,7 +28,7 @@ end
 % Plot the projected lines
 hold on;
 
-scatter(cell2mat(x_coords), cell2mat(y_coords), Marker="x", Color=[0 0 0]);
+scatter(cell2mat(x_coords), cell2mat(y_coords), Marker=".", Color=[0 0 0]);
 
 hold off;
 
