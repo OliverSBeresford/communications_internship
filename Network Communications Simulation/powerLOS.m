@@ -3,4 +3,9 @@ function power = powerLOS(data, transmitter)
     distance = getDistance(data.receiver, transmitter);
     pathLoss = data.A * distance ^ (-data.alpha);
     power = data.sourcePower * smallScaleFading(data.fadingMean) * pathLoss;
+    
+    % Limit received power to transmitted power
+    if power > data.sourcePower
+        power = data.sourcePower;
+    end
 end

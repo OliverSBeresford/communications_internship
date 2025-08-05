@@ -19,4 +19,9 @@ function power = powerNLOS(data, transmitter)
     % Calculate path loss
     distance = getDistance(data.receiver, transmitter);
     power = power * data.A * distance ^ (-data.alpha);
+
+    % Limit received power to transmitted power
+    if power > data.sourcePower
+        power = data.sourcePower;
+    end
 end
