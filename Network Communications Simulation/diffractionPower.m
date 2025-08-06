@@ -1,6 +1,7 @@
-function power = diffractionPower(data)
+function power = diffractionPower(data, baseStation)
     arguments
         data(1, 1) {mustBeA(data, 'SimulationData')}
+        baseStation {mustBeVector}
     end
 
     power = 0;
@@ -12,21 +13,17 @@ function power = diffractionPower(data)
     end
     
     %% Implementing first-order diffraction
+    % Real distance along two paths to get to the receiver
+    dist0 = abs(data.receiver(2) - baseStation(2));
+    dist1 = abs(data.receiver(1) - baseStation(1));
+    
+    % Fictitious distance accounting for diffraction loss
+    fakeDist = dist0 + dist1 + data.q90 * dist0 * dist1;
 
-    numAveBases = sum(data.aveCounts); % Number of bases on avenues
-    baseStation = [0 0];
+    power = power + data.A * fakeDist ^ (-data.alpha);
 
-    for ii = 1:numAveBases
-        baseStation(1) = data.baseStations(ii, 1);
-        baseStation(2) = data.baseStations(ii, 2);
-        
-        % Real distance along two paths to get to the receiver
-        dist0 = abs(data.receiver(2) - baseStation(2));
-        dist1 = abs(data.receiver(1) - baseStation(1));
-        
-        % Fictitious distance accounting for diffraction loss
-        fakeDist = dist0 + dist1 + data.q90 * dist0 * dist1;
-
-        power = power + data.A * fakeDist ^ (-data.alpha);
+    % Power cannot be greater than transmitted power
+    if power > data.sourcePower
+        power = data.sourcePower;
     end
 end

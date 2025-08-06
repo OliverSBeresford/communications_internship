@@ -4,42 +4,67 @@ function coverage = SINR(data)
         data(1, 1) {mustBeA(data, 'SimulationData')}
     end
     
-    % Returns the SINR (signal strength) for a data.receiver
-    [station, stationIndex] = nearestLOS(data);
-    if stationIndex == -1
-        coverage = 0;
-        return;
-    end
-    
-    % Calculates the power received from the connected base station
-    usefulPower = powerLOS(data, station);
+    %% Returns the SINR (signal strength) for a data.receiver
+
+    usefulPower = 0;
 
     % Creating variable to store current base station coordinates
     baseStation = [0 0];
+
+    % If diffraction is used, calculate how many base stations there are on
+    % avenues
+    if data.diffractionOrder > 0
+        numAveBases = sum(data.aveCounts);
+    end
     
     totalInterference = 0;
+
     for ii = 1:data.stationCount
         % Updating the variable that stores the coordinates
         baseStation(1) = data.baseStations(ii, 1);
         baseStation(2) = data.baseStations(ii, 2);
 
         sameStreet = baseStation(1) == data.receiver(1) || baseStation(2) == data.receiver(2);
-        notSource = ii ~= stationIndex;
 
-        if sameStreet && notSource
+        if sameStreet
             % Add the interference from a LOS BS to the total interference
-            totalInterference = totalInterference + powerLOS(data, baseStation);
-        elseif notSource && data.useNLOS
+            p = powerLOS(data, baseStation);
+            totalInterference = totalInterference + p;
+
+            % Update useful power if this one is stronger
+            if p > usefulPower; usefulPower = p; end
+        elseif data.useNLOS
             % Add the interference from this NLOS base station
-            totalInterference = totalInterference + powerNLOS(data, baseStation);
+            p = powerNLOS(data, baseStation);
+            totalInterference = totalInterference + p;
+
+            % Update useful power if this one is stronger
+            if p > usefulPower && data.connectToNLOS; usefulPower = p; end
+        end
+        if ~sameStreet && data.diffractionOrder > 0 && ii <= numAveBases
+            % Add interference from diffraction
+            p = diffractionPower(data, baseStation);
+            totalInterference = totalInterference + p;
+
+            % Update useful power if this one is stronger
+            if p > usefulPower && data.connectToNLOS; usefulPower = p; end
         end
     end
-
-    % Add power from diffraction
-    if data.diffractionOrder > 0
-        totalInterference = totalInterference + diffractionPower(data);
-    end
     
+    % Return if usefulPower is 0
+    if usefulPower == 0
+        coverage = 0;
+        return;
+    end
+
     % Get SINR value using the formula
-    coverage = usefulPower / (data.noisePower + totalInterference);
+    coverage = usefulPower / (data.noisePower + totalInterference - usefulPower);
+
+    % There cannot be an SINR smaller than 0
+    if coverage < 0
+        disp(usefulPower);
+        disp(coverage);
+        disp(totalInterference);
+        error("Negative SINR")
+    end
 end
