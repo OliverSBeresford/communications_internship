@@ -24,6 +24,9 @@ classdef SimulationData < handle
         q90 = sqrt(0.031 / (4 * pi));
         connectToNLOS {mustBeNumericOrLogical}
         createBaseStations {mustBeNumericOrLogical}
+        computationNodes {mustBeNumeric} % For BS optimization
+        thresholdDB {mustBeNumeric} % Threshold for fitness function
+        distBases {mustBeNumeric} % Dist between bases in optimization
     end
     methods
         function obj = SimulationData(options)
@@ -53,6 +56,9 @@ classdef SimulationData < handle
                 options.stCounts {mustBeVector(options.stCounts, 'allow-all-empties')} = [];
                 options.connectToNLOS {mustBeNumericOrLogical} = false;
                 options.createBaseStations {mustBeNumericOrLogical} = true;
+                options.computationNodes {mustBeNumeric} = 100;
+                options.thresholdDB {mustBeNumeric} = 10;
+                options.distBases {mustBeNumeric} = 20;
             end
             % Setting the object's properties
             obj.lambdaBase = options.lambdaBase;
@@ -72,6 +78,9 @@ classdef SimulationData < handle
             obj.diffractionOrder = options.diffractionOrder;
             obj.connectToNLOS = options.connectToNLOS;
             obj.createBaseStations = options.createBaseStations;
+            obj.computationNodes = options.computationNodes;
+            obj.thresholdDB = options.thresholdDB;
+            obj.distBases = options.distBases;
 
             % If they provide true or if any values are empty, do manhattan
             doManhattan = options.doManhattan || isempty(options.avenues) || isempty(options.streets) || isempty(options.baseStations);
