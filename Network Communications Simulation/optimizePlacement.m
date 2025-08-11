@@ -59,7 +59,7 @@ candidateSelect(indices) = 1;
 data.baseStations = candidateBases(candidateSelect, :);
 
 % Creates the fitness baseline for this iteration
-baseFitness = fitnessValue(data, data.computationNodes, data.thresholdDB);
+baseFitness = fitnessValue(data);
 
 % Keep track of the best and worst switches when we power a BS on/off
 bestActivation = -Inf;
@@ -74,7 +74,7 @@ for ii = 1:numCandidates
         data.baseStations = candidateBases(candidateSelect, :);
         
         % Calculate the new fitness value after the change
-        newFitness = fitnessValue(data, data.computationNodes, data.thresholdDB);
+        newFitness = fitnessValue(data);
         
         % If this is the new best deactivation, update variables
         difference = newFitness - baseFitness;
@@ -88,7 +88,7 @@ for ii = 1:numCandidates
         data.baseStations = candidateBases(candidateSelect, :);
         
         % Calculate the new fitness value after the change
-        newFitness = fitnessValue(data, data.computationNodes, data.thresholdDB);
+        newFitness = fitnessValue(data);
         
         % If this is the new best activation, update variables
         difference = newFitness - baseFitness;
