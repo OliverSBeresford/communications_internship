@@ -1,7 +1,7 @@
 function manhattan(data)
     % Homogeneous Poisson-Point Processes
     numAvenues = poissrnd(data.size * data.lambdaAve);
-    numStreets = poissrnd(data.size * data.lambdaSt);
+    numStreets = poissrnd(data.size * data.lambdaSt - 1);
     
     % Uniformly distribute the avenues and streets
     data.avenues = rand(1, numAvenues) .* data.size - (data.size / 2);
