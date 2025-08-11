@@ -38,7 +38,7 @@ classdef SimulationData < handle
                 options.noisePower(1, 1) {mustBeNumeric} = 0;
                 options.baseStations(:, 2) {mustBeMatrix, mustBeNumeric} = [];
                 options.stationCount(1, 1) {mustBeNumeric} = 0;
-                options.penetrationLoss(1, 1) {mustBeNumeric, mustBeInRange(options.penetrationLoss, 0, 1)} = 1;
+                options.penetrationLoss(1, 1) {mustBeNumeric, mustBeInRange(options.penetrationLoss, 0, 1)} = 0.1;
                 options.avenues {mustBeMatrix} = [];
                 options.streets {mustBeMatrix} = [];
                 options.size(1, 1) {mustBeNumeric} = 50;
