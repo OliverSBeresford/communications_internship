@@ -23,6 +23,7 @@ classdef SimulationData < handle
         stCounts {mustBeVector(stCounts, 'allow-all-empties')}
         q90 = sqrt(0.031 / (4 * pi));
         connectToNLOS {mustBeNumericOrLogical}
+        createBaseStations {mustBeNumericOrLogical}
     end
     methods
         function obj = SimulationData(options)
@@ -51,6 +52,7 @@ classdef SimulationData < handle
                 options.aveCounts {mustBeVector(options.aveCounts, 'allow-all-empties')} = [];
                 options.stCounts {mustBeVector(options.stCounts, 'allow-all-empties')} = [];
                 options.connectToNLOS {mustBeNumericOrLogical} = false;
+                options.createBaseStations {mustBeNumericOrLogical} = true;
             end
             % Setting the object's properties
             obj.lambdaBase = options.lambdaBase;
@@ -69,6 +71,7 @@ classdef SimulationData < handle
             obj.pathLossNLOS = options.pathLossNLOS;
             obj.diffractionOrder = options.diffractionOrder;
             obj.connectToNLOS = options.connectToNLOS;
+            obj.createBaseStations = options.createBaseStations;
 
             % If they provide true or if any values are empty, do manhattan
             doManhattan = options.doManhattan || isempty(options.avenues) || isempty(options.streets) || isempty(options.baseStations);
