@@ -15,24 +15,18 @@ data = SimulationData( ...
     pathLossNLOS=false, ...
     connectToNLOS=true, ...
     createBaseStations=false, ...
-    penetrationLoss=0.1 ...
+    penetrationLoss=0.1, ...
+    computationNodes=100, ... Number of theoretical users we calculate for on each street
+    thresholdDB=10, ... (In dB) The minimum SINR to be acceptable for the fitness test
+    distBases = 20 ... Distance between each candidate base
 );
-
-% Number of theoretical users we calculate for on each street
-computationNodes = 100;
-
-% (In dB) The minimum SINR to be acceptable for the fitness test
-thresholdDB = 10;
-
-% Distance between each candidate base
-distBases = 20;
 
 % Number of deployable base stations
 numDeployed = data.size * data.lambdaBase * (length(data.avenues) + length(data.streets));
 numDeployed = round(numDeployed);
 
 % Number of candidate base stations
-candidatesPerRoad = data.size / distBases;
+candidatesPerRoad = data.size / data.distBases;
 numCandidates = (length(data.avenues) + length(data.streets)) * candidatesPerRoad;
 
 % Matrix to contain the x-y coordinate pairs of the candidate base stations
@@ -65,7 +59,7 @@ candidateSelect(indices) = 1;
 data.baseStations = candidateBases(candidateSelect, :);
 
 % Creates the fitness baseline for this iteration
-baseFitness = fitnessValue(data, computationNodes, thresholdDB);
+baseFitness = fitnessValue(data, data.computationNodes, data.thresholdDB);
 
 % Keep track of the best and worst switches when we power a BS on/off
 bestActivation = -Inf;
@@ -80,7 +74,7 @@ for ii = 1:numCandidates
         data.baseStations = candidateBases(candidateSelect, :);
         
         % Calculate the new fitness value after the change
-        newFitness = fitnessValue(data, computationNodes, thresholdDB);
+        newFitness = fitnessValue(data, data.computationNodes, data.thresholdDB);
         
         % If this is the new best deactivation, update variables
         difference = newFitness - baseFitness;
@@ -94,7 +88,7 @@ for ii = 1:numCandidates
         data.baseStations = candidateBases(candidateSelect, :);
         
         % Calculate the new fitness value after the change
-        newFitness = fitnessValue(data, computationNodes, thresholdDB);
+        newFitness = fitnessValue(data, data.computationNodes, data.thresholdDB);
         
         % If this is the new best activation, update variables
         difference = newFitness - baseFitness;
