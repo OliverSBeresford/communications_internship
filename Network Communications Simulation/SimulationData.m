@@ -20,6 +20,7 @@ classdef SimulationData < handle
         pathLossNLOS(1, 1) {mustBeNumericOrLogical}
         diffractionOrder(1, 1) {mustBeNumeric}
         aveCounts {mustBeVector(aveCounts, 'allow-all-empties')}
+        numAveBases {mustBeNumeric}
         stCounts {mustBeVector(stCounts, 'allow-all-empties')}
         q90 = sqrt(0.031 / (4 * pi));
         connectToNLOS {mustBeNumericOrLogical}

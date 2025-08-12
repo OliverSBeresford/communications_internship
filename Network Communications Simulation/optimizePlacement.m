@@ -2,6 +2,8 @@
 % Provide all the parameters to SimulationData
 data = SimulationData( ...
     useNLOS=true, ...
+    diffractionOrder=1, ...
+    useDiffraction=true, ...
     size=500, ...
     lambdaBase=1.5/1000, ...
     lambdaAve=7/1000, ...
@@ -18,7 +20,7 @@ data = SimulationData( ...
     penetrationLoss=0.1, ...
     computationNodes=100, ... Number of theoretical users we calculate for on each street
     thresholdDB=10, ... (In dB) The minimum SINR to be acceptable for the fitness test
-    distBases = 20 ... Distance between each candidate base
+    distBases = 15 ... Distance between each candidate base
 );
 
 % Number of deployable base stations
@@ -57,44 +59,35 @@ candidateSelect(indices) = 1;
 
 % Update deployed base stations, with an extra one for when we switch one
 data.baseStations = candidateBases(candidateSelect, :);
+data.numAveBases = sum(indices <= length(data.avenues) * candidatesPerRoad);
 
 % Creates the fitness baseline for this iteration
 baseFitness = fitnessValue(data);
 
-% Keep track of the best and worst switches when we power a BS on/off
-bestActivation = -Inf;
-bestActivationIndex = -1;
-bestDeactivation = -Inf;
-bestDeactivationIndex = -1;
+% Condition for the while loop
+noticeableDifference = true;
 
-for ii = 1:numCandidates
-    if candidateSelect(ii)
-        % Switching this one off if it's on
-        candidateSelect(ii) = false;
-        data.baseStations = candidateBases(candidateSelect, :);
-        
-        % Calculate the new fitness value after the change
-        newFitness = fitnessValue(data);
-        
-        % If this is the new best deactivation, update variables
-        difference = newFitness - baseFitness;
-        if difference > bestDeactivation
-            bestDeactivationIndex = ii;
-            bestDeactivation = difference;
-        end
-    else
-        % Switching this one on if it's off
-        candidateSelect(ii) = true;
-        data.baseStations = candidateBases(candidateSelect, :);
-        
-        % Calculate the new fitness value after the change
-        newFitness = fitnessValue(data);
-        
-        % If this is the new best activation, update variables
-        difference = newFitness - baseFitness;
-        if difference > bestActivation
-            bestActivationIndex = ii;
-            bestActivation = difference;
-        end
+while noticeableDifference
+    [bestActivation, bestDeactivation] = bestCandidates(data, candidateBases, numCandidates, candidatesPerRoad, baseFitness);
+    
+    % Activate and deactivate 2 base stations that gave optimal performance
+    candidateSelect(bestActivation) = true;
+    candidateSelect(bestDeactivation) = false;
+
+    % Updating numAveBases
+    data.numAveBases = sum(candidateSelect(1:length(data.avenues) * candidatesPerRoad));
+    
+    % If there is no noticeable change in the fitness, stop
+    newFitness = fitnessValue(data);
+
+    if abs(newFitness - baseFitness) / baseFitness * 100 < 1
+        noticeableDifference = false;
     end
+    
+    disp(baseFitness + " " + newFitness)
+
+    baseFitness = newFitness;
 end
+
+data.baseStations = candidateBases(candidateSelect, :);
+data.drawManhattan();

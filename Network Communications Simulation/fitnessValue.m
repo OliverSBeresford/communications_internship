@@ -1,6 +1,9 @@
 function total = fitnessValue(data)
     total = 0;
     
+    % Making sure stationCount has been set
+    data.stationCount = size(data.baseStations, 1);
+    
     % Going through each avenue and looking at 500 points
     for ave = data.avenues
         for y = linspace(-data.size/2, data.size/2, data.computationNodes)
