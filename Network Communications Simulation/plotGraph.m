@@ -4,7 +4,7 @@ data = SimulationData( ...
     useNLOS=true, ...
     diffractionOrder=1, ...
     useDiffraction=true, ...
-    size=500, ...
+    size=7000, ...
     lambdaBase=1.5/1000, ...
     lambdaAve=7/1000, ...
     lambdaSt=7/1000, ...
@@ -40,7 +40,21 @@ end
 [x, y] = CCDF(results, numBins);
 
 % Plot the graph
-plot(x, y, Color="r", DisplayName="2D with NLOS and Diffraction (Random)");
+plot(x, y, Color="r", DisplayName="2D with NLOS and Diffraction (NLOS connect)");
+
+data.connectToNLOS = false;
+
+for j = 1:simulations
+    data.runManhattan();
+    result = SINR(data);
+    results(j) = 10 * log10(result);
+end
+
+% Plot the CCDF graph for this K value
+[x, y] = CCDF(results, numBins);
+
+% Plot the graph
+plot(x, y, Color="b", DisplayName="2D with NLOS and Diffraction (No NLOS connection)");
  
 % Label the graph
 title('Coverage probability CCDF');
