@@ -31,5 +31,4 @@ function total = fitnessValue(data)
             end
         end
     end
-
 end
