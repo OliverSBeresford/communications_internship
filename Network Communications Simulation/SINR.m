@@ -13,8 +13,8 @@ function coverage = SINR(data)
 
     % If diffraction is used, calculate how many base stations there are on
     % avenues
-    if data.diffractionOrder > 0
-        numAveBases = sum(data.aveCounts);
+    if data.diffractionOrder > 0 && isempty(data.numAveBases)
+        data.numAveBases = sum(data.aveCounts);
     end
     
     totalInterference = 0;
@@ -41,7 +41,7 @@ function coverage = SINR(data)
             % Update useful power if this one is stronger
             if p > usefulPower && data.connectToNLOS; usefulPower = p; end
         end
-        if ~sameStreet && data.diffractionOrder > 0 && ii <= numAveBases
+        if ~sameStreet && data.diffractionOrder > 0 && ii <= data.numAveBases
             % Add interference from diffraction
             p = diffractionPower(data, baseStation);
             totalInterference = totalInterference + p;
