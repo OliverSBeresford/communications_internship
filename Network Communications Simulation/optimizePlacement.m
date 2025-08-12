@@ -29,6 +29,7 @@ numDeployed = round(numDeployed);
 
 % Number of candidate base stations
 candidatesPerRoad = data.size / data.distBases;
+candidatesPerRoad = round(candidatesPerRoad);
 numCandidates = (length(data.avenues) + length(data.streets)) * candidatesPerRoad;
 
 % Matrix to contain the x-y coordinate pairs of the candidate base stations
@@ -68,7 +69,7 @@ baseFitness = fitnessValue(data);
 noticeableDifference = true;
 
 while noticeableDifference
-    [bestActivation, bestDeactivation] = bestCandidates(data, candidateBases, numCandidates, candidatesPerRoad, baseFitness);
+    [bestActivation, bestDeactivation] = bestCandidates(data, candidateBases, candidatesPerRoad, candidateSelect, baseFitness);
     
     % Activate and deactivate 2 base stations that gave optimal performance
     candidateSelect(bestActivation) = true;
@@ -84,6 +85,7 @@ while noticeableDifference
         noticeableDifference = false;
     end
     
+    clc
     disp(baseFitness + " " + newFitness)
 
     baseFitness = newFitness;
