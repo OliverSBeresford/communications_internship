@@ -67,6 +67,7 @@ baseFitness = fitnessValue(data);
 
 % Condition for the while loop
 noticeableDifference = true;
+results = ones(10, 1) * -Inf;
 
 while noticeableDifference
     [bestActivation, bestDeactivation] = bestCandidates(data, candidateBases, candidatesPerRoad, candidateSelect, baseFitness);
@@ -80,10 +81,15 @@ while noticeableDifference
     
     % If there is no noticeable change in the fitness, stop
     newFitness = fitnessValue(data);
-
-    if abs(newFitness - baseFitness) / baseFitness * 100 < 1
+    
+    % If there is no variance in the last 10 results, stop
+    if results(10) ~= -Inf && std(results) / mean(results) < 0.05
         noticeableDifference = false;
     end
+    
+    % Update last 10 results
+    results(2:10) = results(1:9);
+    results(1) = newFitness;
     
     disp(baseFitness + " " + newFitness)
 
@@ -92,10 +98,5 @@ end
 
 data.baseStations = candidateBases(candidateSelect, :);
 
-hold on
-
-data.drawManhattan();
 displayFitness(data, 500);
 coverageProbability(data, 1e4);
-
-hold off
