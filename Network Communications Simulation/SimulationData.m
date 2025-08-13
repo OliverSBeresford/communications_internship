@@ -110,7 +110,12 @@ classdef SimulationData < handle
             manhattan(obj);
         end
 
-        function drawManhattan(obj)
+        function drawManhattan(obj, baseStationSize)
+            arguments
+                obj {mustBeA(obj, "SimulationData")}
+                baseStationSize {mustBeNumeric} = 50;
+            end
+
             % If you can't draw the graph, return
             if isempty(obj.baseStations) || isempty(obj.avenues) || isempty(obj.streets)
                 return;
@@ -123,15 +128,12 @@ classdef SimulationData < handle
             xline(obj.avenues);
             yline(obj.streets);
             
-            % Center point (receiver)
-            plot(0, 0, "r o");
-            
             % Limiting the viewport to a square of size squareSize
             xlim([-(obj.size / 2), obj.size / 2]);
             ylim([-(obj.size / 2), obj.size / 2]);
     
             % Draw points
-            scatter(obj.baseStations(:, 1), obj.baseStations(:, 2), "blue", "x")
+            scatter(obj.baseStations(:, 1), obj.baseStations(:, 2), baseStationSize, "red", "x")
             
             hold off
         end
