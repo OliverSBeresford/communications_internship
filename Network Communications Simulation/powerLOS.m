@@ -2,10 +2,10 @@ function power = powerLOS(data, transmitter)
     % Calculates power received from an LOS base station from the formula
     distance = getDistance(data.receiver, transmitter);
     pathLoss = data.A * distance ^ (-data.alpha);
-    power = data.sourcePower * smallScaleFading(data.fadingMean) * pathLoss;
+    power = transmitter.power * smallScaleFading(data.fadingMean) * pathLoss;
     
     % Limit received power to transmitted power
-    if power > data.sourcePower
-        power = data.sourcePower;
+    if power > transmitter.power
+        power = transmitter.power;
     end
 end

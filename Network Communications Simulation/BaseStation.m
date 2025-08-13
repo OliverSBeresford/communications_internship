@@ -1,8 +1,8 @@
-classdef BaseStation
+classdef BaseStation < handle
     properties 
-        x {mustBeNumeric}
-        y {mustBeNumeric}
-        z {mustBeNumeric}
-        power {mustBeNumeric} = 1
+        x(1, 1) {mustBeNumeric};
+        y(1, 1) {mustBeNumeric};
+        z(1, 1) {mustBeNumeric};
+        power(1, 1) {mustBeNumeric} = 1;
     end
 end

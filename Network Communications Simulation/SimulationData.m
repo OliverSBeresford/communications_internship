@@ -6,7 +6,7 @@ classdef SimulationData < handle
         A(1, 1) {mustBeNumeric};
         fadingMean(1, 1) {mustBeNumeric};
         noisePower(1, 1) {mustBeNumeric};
-        baseStations(:, 2) {mustBeMatrix, mustBeNumeric} 
+        baseStations {mustBeVector(baseStations, 'allow-all-empties')} 
         stationCount(1, 1) {mustBeNumeric}
         penetrationLoss(1, 1) {mustBeNumeric, mustBeInRange(penetrationLoss, 0, 1)};
         avenues {mustBeMatrix}
@@ -40,7 +40,7 @@ classdef SimulationData < handle
                 options.A(1, 1) {mustBeNumeric} = 1;
                 options.fadingMean(1, 1) {mustBeNumeric} = 1;
                 options.noisePower(1, 1) {mustBeNumeric} = 0;
-                options.baseStations(:, 2) {mustBeMatrix, mustBeNumeric} = [];
+                options.baseStations {mustBeVector(options.baseStations, 'allow-all-empties')} = [];
                 options.stationCount(1, 1) {mustBeNumeric} = 0;
                 options.penetrationLoss(1, 1) {mustBeNumeric, mustBeInRange(options.penetrationLoss, 0, 1)} = 0.1;
                 options.avenues {mustBeMatrix} = [];
