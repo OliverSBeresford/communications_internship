@@ -83,7 +83,7 @@ while noticeableDifference
     newFitness = fitnessValue(data);
     
     % If there is no variance in the last 10 results, stop
-    if results(10) ~= -Inf && std(results) / mean(results) < 0.05
+    if results(10) ~= -Inf && std(results) / mean(results) < 0.02
         noticeableDifference = false;
     end
     
