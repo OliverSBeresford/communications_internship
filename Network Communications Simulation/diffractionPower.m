@@ -14,8 +14,8 @@ function power = diffractionPower(data, baseStation)
     
     %% Implementing first-order diffraction
     % Real distance along two paths to get to the receiver
-    dist0 = abs(data.receiver(2) - baseStation.y);
-    dist1 = abs(data.receiver(1) - baseStation.x);
+    dist0 = abs(data.receiver(2) - baseStation(2));
+    dist1 = abs(data.receiver(1) - baseStation(1));
     
     % Fictitious distance accounting for diffraction loss
     fakeDist = dist0 + dist1 + data.q90 * dist0 * dist1;
@@ -23,7 +23,7 @@ function power = diffractionPower(data, baseStation)
     power = power + data.A * fakeDist ^ (-data.alpha);
 
     % Power cannot be greater than transmitted power
-    if power > baseStation.power
-        power = baseStation.power;
+    if power > data.sourcePower
+        power = data.sourcePower;
     end
 end

@@ -9,7 +9,7 @@ function power = powerNLOS(data, transmitter)
     buildings = 1 + numRoadsCrossed(data, transmitter);
 
     % Calculate NLOS power
-    power = transmitter.power * smallScaleFading(data.fadingMean) * data.penetrationLoss ^ buildings;
+    power = data.sourcePower * smallScaleFading(data.fadingMean) * data.penetrationLoss ^ buildings;
     
     % Done if you don't need to calculate path loss
     if ~data.pathLossNLOS
@@ -21,7 +21,7 @@ function power = powerNLOS(data, transmitter)
     power = power * data.A * distance ^ (-data.alpha);
 
     % Limit received power to transmitted power
-    if power > transmitter.power
-        power = transmitter.power;
+    if power > data.sourcePower
+        power = data.sourcePower;
     end
 end

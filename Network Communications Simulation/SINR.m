@@ -8,6 +8,9 @@ function coverage = SINR(data)
 
     usefulPower = 0;
 
+    % Creating variable to store current base station coordinates
+    baseStation = [0 0];
+
     % If diffraction is used, calculate how many base stations there are on
     % avenues
     if data.diffractionOrder > 0 && isempty(data.numAveBases)
@@ -18,9 +21,10 @@ function coverage = SINR(data)
 
     for ii = 1:data.stationCount
         % Updating the variable that stores the coordinates
-        baseStation = data.baseStations(ii);
+        baseStation(1) = data.baseStations(ii, 1);
+        baseStation(2) = data.baseStations(ii, 2);
 
-        sameStreet = baseStation.x == data.receiver(1) || baseStation.y == data.receiver(2);
+        sameStreet = baseStation(1) == data.receiver(1) || baseStation(2) == data.receiver(2);
 
         if sameStreet
             % Add the interference from a LOS BS to the total interference
