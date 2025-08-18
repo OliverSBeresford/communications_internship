@@ -21,7 +21,7 @@ function manhattan(data)
 
     % Create matrix for all the stations
     data.stationCount = sum(data.aveCounts) + sum(data.stCounts);
-    data.baseStations = createArray(data.stationCount, 1, "BaseStation");
+    data.baseStations = cell(data.stationCount, 1);
 
     index = 1;
 
@@ -37,8 +37,7 @@ function manhattan(data)
 
         % Updating main matrix
         for j = 1:thisAveCount
-            data.baseStations(index).y = y(j);
-            data.baseStations(index).x = x;
+            data.baseStations{index} = BaseStation(x, y(j), 0, 1);
             index = index + 1;
         end
     end
@@ -53,9 +52,10 @@ function manhattan(data)
 
         % Updating main matrix
         for j = 1:thisStCount
-            data.baseStations(index).y = y;
-            data.baseStations(index).x = x(j);
+            data.baseStations{index} = BaseStation(x(j), y, 0, 1);
             index = index + 1;
         end
     end
+
+    data.baseStations = cell2mat(data.baseStations);
 end
