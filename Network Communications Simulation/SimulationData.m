@@ -125,15 +125,15 @@ classdef SimulationData < handle
             hold on
     
             % Each avenue (North-South) and street (East-West)
-            xline(obj.avenues);
-            yline(obj.streets);
+            xline(obj.avenues, HandleVisibility="off");
+            yline(obj.streets, HandleVisibility="off");
             
             % Limiting the viewport to a square of size squareSize
             xlim([-(obj.size / 2), obj.size / 2]);
             ylim([-(obj.size / 2), obj.size / 2]);
     
             % Draw points
-            scatter(obj.baseStations(:, 1), obj.baseStations(:, 2), baseStationSize, "red", "x")
+            scatter(obj.baseStations(:, 1), obj.baseStations(:, 2), baseStationSize, "red", "x", DisplayName="Base Stations")
             
             hold off
         end

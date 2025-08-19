@@ -6,14 +6,7 @@ function displayFitness(data, computationNodes)
     n_colors = upperBound - lowerBound;
 
     % Colors for the beginning and end of the gradient
-    navy = [0 0 0.5];
-    yellow = [1 1 0];
-    
-    % Vectors with all the needed colors in order of weakest to strongest
-    % SINR
-    R = linspace(navy(1), yellow(1), n_colors);
-    G = linspace(navy(2), yellow(2), n_colors);
-    B = linspace(navy(3), yellow(3), n_colors);
+    colorMap = hot(n_colors);
     
     % How thick the points are
     chonkiness = 20;
@@ -32,7 +25,7 @@ function displayFitness(data, computationNodes)
     
             % Determining color based on SINR strength
             index = clip(round(sinr), lowerBound, upperBound - 1) - lowerBound + 1;
-            color = [R(index) G(index) B(index)];
+            color = colorMap(index, :);
 
             % Plot the point
             plot(ave, y, Marker=".", Color=color, HandleVisibility="off", MarkerSize=chonkiness);
@@ -48,7 +41,7 @@ function displayFitness(data, computationNodes)
 
             % Determining color based on SINR strength
             index = clip(round(sinr), lowerBound, upperBound - 1) - lowerBound + 1;
-            color = [R(index) G(index) B(index)];
+            color = colorMap(index, :);
 
             % Plot the point
             plot(x, st, Marker=".", Color=color, HandleVisibility="off", MarkerSize=chonkiness);
@@ -56,6 +49,17 @@ function displayFitness(data, computationNodes)
     end
 
     data.drawManhattan(20 * chonkiness);
+
+    % Label the title and axis labels
+    title("Network Coverage Map");
+    xlabel("x (m)");
+    ylabel("y (m)");
+    
+    % Adding the color bar to explain color gradient
+    colormap(colorMap);
+    clim([lowerBound upperBound]);
+    colorBar = colorbar;
+    colorBar.Label.String = "SINR Value";
 
     hold off
 end
