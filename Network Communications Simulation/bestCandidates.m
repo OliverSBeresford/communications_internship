@@ -4,9 +4,12 @@ function [bestActivationIndex, bestDeactivationIndex] = bestCandidates(data, can
     bestActivationIndex = -1;
     bestDeactivation = -Inf;
     bestDeactivationIndex = -1;
+    
+    % Extract number of avenues to not access object property
+    numAvenues = length(data.avenues);
 
     for ii = 1:size(candidates, 1)
-        isOnAnAvenue = ii <= length(data.avenues) * candidatesPerRoad;
+        isOnAnAvenue = ii <= numAvenues * candidatesPerRoad;
 
         if candidateSelect(ii)
             % Updating numAveBases
@@ -37,7 +40,7 @@ function [bestActivationIndex, bestDeactivationIndex] = bestCandidates(data, can
             end
         else
             % Updating numAveBases
-            if ii <= length(data.avenues) * candidatesPerRoad
+            if ii <= numAvenues * candidatesPerRoad
                 data.numAveBases = data.numAveBases + 1;
             end
 
