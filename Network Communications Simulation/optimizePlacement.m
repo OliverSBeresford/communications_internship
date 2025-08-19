@@ -20,7 +20,7 @@ data = SimulationData( ...
     penetrationLoss=0.1, ...
     computationNodes=100, ... Number of theoretical users we calculate for on each street
     thresholdDB=10, ... (In dB) The minimum SINR to be acceptable for the fitness test
-    distBases = 15 ... Distance between each candidate base
+    distBases = 20 ... Distance between each candidate base
 );
 
 % Number of deployable base stations
@@ -83,7 +83,7 @@ while noticeableDifference
     newFitness = fitnessValue(data);
     
     % If there is no variance in the last 10 results, stop
-    if results(10) ~= -Inf && std(results) / mean(results) < 0.02
+    if results(10) ~= -Inf && std(results) / mean(results) < 0.05
         noticeableDifference = false;
     end
     
