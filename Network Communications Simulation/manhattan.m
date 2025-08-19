@@ -18,7 +18,7 @@ function manhattan(data)
 
     % Create matrix for all the stations
     data.stationCount = sum(data.aveCounts) + sum(data.stCounts);
-    data.baseStations = zeros(data.stationCount, 2);
+    allStations = zeros(data.stationCount, 2);
 
     index = 1;
 
@@ -36,7 +36,7 @@ function manhattan(data)
         stations(:, 1) = data.avenues(ii);
 
         % Updating main matrix
-        data.baseStations(index:index + thisAveCount - 1, :) = stations;
+        allStations(index:index + thisAveCount - 1, :) = stations;
         index = index + thisAveCount;
     end
     for ii = 1:numStreets + 1
@@ -52,7 +52,10 @@ function manhattan(data)
         stations(:, 2) = data.streets(ii);
 
         % Updating main matrix
-        data.baseStations(index:index + thisStCount - 1, :) = stations;
+        allStations(index:index + thisStCount - 1, :) = stations;
         index = index + thisStCount;
     end
+    
+    % Set the value once to avoid overhead
+    data.baseStations = allStations;
 end
