@@ -110,10 +110,11 @@ classdef SimulationData < handle
             manhattan(obj);
         end
 
-        function drawManhattan(obj, baseStationSize)
+        function drawManhattan(obj, baseStationSize, baseStationColor)
             arguments
                 obj {mustBeA(obj, "SimulationData")}
-                baseStationSize {mustBeNumeric} = 50;
+                baseStationSize {mustBeNumeric} = 300;
+                baseStationColor = "red";
             end
 
             % If you can't draw the graph, return
@@ -133,7 +134,7 @@ classdef SimulationData < handle
             ylim([-(obj.size / 2), obj.size / 2]);
     
             % Draw points
-            scatter(obj.baseStations(:, 1), obj.baseStations(:, 2), baseStationSize, "red", "x", DisplayName="Base Stations")
+            scatter(obj.baseStations(:, 1), obj.baseStations(:, 2), baseStationSize, baseStationColor, "x", DisplayName="Base Stations")
             
             hold off
         end
