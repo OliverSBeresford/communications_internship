@@ -7,6 +7,9 @@ function manhattan(data)
     data.avenues = rand(1, numAvenues) .* data.size - (data.size / 2);
     data.streets = [0 rand(1, numStreets) .* data.size - (data.size / 2)];
     
+    % Incrementing for the y = 0 street
+    numStreets = numStreets + 1;
+    
     % Only create base stations if requested
     if ~data.createBaseStations
         return;
@@ -14,11 +17,11 @@ function manhattan(data)
 
     % Number of base stations on each avenue, then on each street
     data.aveCounts = poissrnd(data.lambdaBase * data.size, 1, numAvenues);
-    data.stCounts = poissrnd(data.lambdaBase * data.size, 1, numStreets + 1);
+    data.stCounts = poissrnd(data.lambdaBase * data.size, 1, numStreets);
 
     % Create matrix for all the stations
     data.stationCount = sum(data.aveCounts) + sum(data.stCounts);
-    allStations = zeros(data.stationCount, 2);
+    allStations = ones(data.stationCount, 2);
 
     index = 1;
 
@@ -39,7 +42,7 @@ function manhattan(data)
         allStations(index:index + thisAveCount - 1, :) = stations;
         index = index + thisAveCount;
     end
-    for ii = 1:numStreets + 1
+    for ii = 1:numStreets
         % Row 2 is streets, column is the base station count for that st
         thisStCount = data.stCounts(ii);
 
