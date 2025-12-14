@@ -222,3 +222,59 @@ pub fn simulate_coverage_ccdf(mut data: SimulationData, simulations: usize, num_
 
     crate::metrics::ccdf(&results_db, num_bins)
 }
+
+pub fn simulate_average_sinr(data: &mut SimulationData, simulations: usize, seed: u64) -> f64 {
+    let mut results_linear: Vec<f64> = Vec::with_capacity(simulations);
+
+    for iteration_idx in 0..simulations {
+        // Regenerate a fresh Manhattan layout each simulation
+        let layout = generate_manhattan(
+            data.size,
+            data.lambda_ave,
+            data.lambda_st,
+            data.lambda_base,
+            seed + iteration_idx as u64,
+            data.create_base_stations,
+        );
+        data.avenues = layout.avenues;
+        data.streets = layout.streets;
+        data.base_stations = layout.base_stations;
+        data.ave_counts = layout.ave_counts;
+
+        // Place user at (0,0) each time
+        data.receiver = Point { x: 0.0, y: 0.0 };
+
+        let mut useful_power = 0.0;
+        let mut total_interference = 0.0;
+        let num_avenue_bases: usize = if data.diffraction_order > 0 && !data.ave_counts.is_empty() {
+            data.ave_counts.iter().sum()
+        } else { 0 };
+
+        let mut rng = StdRng::seed_from_u64(seed ^ (iteration_idx as u64 + 1));
+
+        for (base_idx, &base_station) in data.base_stations.iter().enumerate() {
+            let same_street = base_station.x == data.receiver.x || base_station.y == data.receiver.y;
+            if same_street {
+                let power = power_los_linear(&mut rng, &data, base_station);
+                total_interference += power;
+                if power > useful_power { useful_power = power; }
+            } else if data.use_nlos {
+                let power = power_nlos_linear(&mut rng, &data, base_station);
+                total_interference += power;
+                if power > useful_power && data.connect_to_nlos { useful_power = power; }
+            }
+            if !same_street && data.diffraction_order > 0 && data.use_diffraction && base_idx < num_avenue_bases {
+                let power = diffraction_power_linear(&data, base_station);
+                total_interference += power;
+                if power > useful_power && data.connect_to_nlos { useful_power = power; }
+            }
+        }
+
+        let sinr = sinr_linear(useful_power, data.noise_power, total_interference);
+        results_linear.push(sinr);
+    }
+
+    // Return mean SINR in dB
+    let mean_linear = results_linear.iter().sum::<f64>() / results_linear.len() as f64;
+    10.0 * mean_linear.log10()
+}

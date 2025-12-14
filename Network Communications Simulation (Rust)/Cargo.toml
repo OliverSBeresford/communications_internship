@@ -35,3 +35,7 @@ path = "src/bin/optimize.rs"
 [[bin]]
 name = "plot_manhattan"
 path = "src/bin/plot_manhattan.rs"
+
+[[bin]]
+name = "density"
+path = "src/bin/density.rs"
