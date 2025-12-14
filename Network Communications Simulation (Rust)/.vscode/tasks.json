@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run coverage_ccdf with progress",
+			"type": "shell",
+			"command": "cargo run --bin coverage_ccdf -- --output-csv --plot-svg",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build"
+		}
+	]
+}
