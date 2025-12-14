@@ -11,7 +11,8 @@ fn main() {
     let grid_size = 1000.0;
     let avenue_density = 7.0 / 1000.0;
     let street_density = 7.0 / 1000.0;
-    let base_station_density = 1.5 / 1000.0;
+    let base_station_density = 1500.0 / 1000.0;
+    let seed = 42; // Seed for reproducibility
 
     let data = SimulationData {
         source_power: 1.0,
@@ -39,16 +40,17 @@ fn main() {
         threshold_db: 10.0,
     };
 
-    let simulations = 1e5 as usize;
+    let simulations = 1e4 as usize;
     let num_bins = simulations / 200;
-    let (ccdf_x, ccdf_y) = simulate_coverage_ccdf(data, simulations, num_bins, 42);
+    let (ccdf_x, ccdf_y) = simulate_coverage_ccdf(data, simulations, num_bins, seed);
 
     // Ensure output directory exists
     create_dir_all("output").expect("Failed to create output directory");
 
     let args: Vec<String> = env::args().collect();
     if args.iter().any(|a| a == "--output-csv") {
-        let path = Path::new("output/ccdf.csv");
+        let name = format!("output/ccdf_{}_{}.csv", seed, base_station_density * 1000.0);
+        let path = Path::new(&name);
         let file = File::create(path).expect("create csv");
         let mut csv_writer = Writer::from_writer(file);
         csv_writer.write_record(["theta", "probability"]).unwrap();
@@ -56,11 +58,12 @@ fn main() {
             csv_writer.write_record([x_value.to_string(), y_value.to_string()]).unwrap();
         }
         csv_writer.flush().unwrap();
-        println!("Wrote {} points to output/ccdf.csv", ccdf_x.len());
+        println!("Wrote {} points to {}", ccdf_x.len(), name);
     }
 
     if args.iter().any(|a| a == "--plot-svg") {
-        let root = SVGBackend::new("output/ccdf.svg", (800, 600)).into_drawing_area();
+        let name = format!("output/ccdf_{}_{}.svg", seed, base_station_density * 1000.0);
+        let root = SVGBackend::new(&name, (800, 600)).into_drawing_area();
         root.fill(&WHITE).unwrap();
         let y_minimum = ccdf_y.iter().cloned().fold(f64::INFINITY, f64::min);
         let y_maximum = ccdf_y.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
@@ -77,7 +80,7 @@ fn main() {
             .y_desc("Probability")
             .draw().unwrap();
         chart.draw_series(plotters::series::LineSeries::new(ccdf_x.iter().zip(ccdf_y.iter()).map(|(&x_val,&y_val)|(x_val,y_val)), &RED)).unwrap();
-        println!("Wrote output/ccdf.svg plot");
+        println!("Wrote {}", name);
     }
 
     if !args.iter().any(|a| a == "--output-csv" || a == "--plot-svg") {
