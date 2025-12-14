@@ -5,6 +5,7 @@ use rand::{Rng, SeedableRng};
 use serde::{Deserialize, Serialize};
 use statrs::distribution::{ContinuousCDF, Exp, Poisson};
 use rand::distributions::Distribution;
+use indicatif::{ProgressBar, ProgressStyle};
 
 #[derive(Debug, Clone)]
 pub struct ManhattanLayout {
@@ -158,6 +159,12 @@ fn sinr_linear(useful_power: f64, noise_power: f64, total_interference: f64) -> 
 pub fn simulate_coverage_ccdf(mut data: SimulationData, simulations: usize, num_bins: usize, seed: u64) -> (Vec<f64>, Vec<f64>) {
     let mut results_db: Vec<f64> = Vec::with_capacity(simulations);
 
+    // Progress bar for simulation iterations
+    let pb = ProgressBar::new(simulations as u64);
+    pb.set_style(ProgressStyle::with_template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({percent}%) - simulating CCDF")
+        .unwrap()
+        .progress_chars("=>-"));
+
     for iteration_idx in 0..simulations {
         // Regenerate a fresh Manhattan layout each simulation
         let layout = generate_manhattan(
@@ -191,11 +198,13 @@ pub fn simulate_coverage_ccdf(mut data: SimulationData, simulations: usize, num_
                 total_interference += power;
                 if power > useful_power { useful_power = power; }
             } else if data.use_nlos {
+                dbg!(&data);
                 let power = power_nlos_linear(&mut rng, &data, base_station);
                 total_interference += power;
                 if power > useful_power && data.connect_to_nlos { useful_power = power; }
             }
-            if !same_street && data.diffraction_order > 0 && base_idx < num_avenue_bases {
+            if !same_street && data.diffraction_order > 0 && data.use_diffraction && base_idx < num_avenue_bases {
+                dbg!(&data);
                 let power = diffraction_power_linear(&data, base_station);
                 total_interference += power;
                 if power > useful_power && data.connect_to_nlos { useful_power = power; }
@@ -204,7 +213,12 @@ pub fn simulate_coverage_ccdf(mut data: SimulationData, simulations: usize, num_
 
         let sinr = sinr_linear(useful_power, data.noise_power, total_interference);
         results_db.push(10.0 * sinr.log10());
+
+        // update progress bar
+        pb.inc(1);
     }
+
+    pb.finish_with_message("CCDF simulation complete");
 
     crate::metrics::ccdf(&results_db, num_bins)
 }
