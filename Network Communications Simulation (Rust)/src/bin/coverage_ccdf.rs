@@ -48,6 +48,7 @@ fn main() {
     create_dir_all("output").expect("Failed to create output directory");
 
     let args: Vec<String> = env::args().collect();
+    // Output CSV if requested
     if args.iter().any(|a| a == "--output-csv") {
         let name = format!("output/ccdf_{}_{}.csv", seed, base_station_density * 1000.0);
         let path = Path::new(&name);
@@ -61,6 +62,7 @@ fn main() {
         println!("Wrote {} points to {}", ccdf_x.len(), name);
     }
 
+    // Plot SVG if requested
     if args.iter().any(|a| a == "--plot-svg") {
         let name = format!("output/ccdf_{}_{}.svg", seed, base_station_density * 1000.0);
         let root = SVGBackend::new(&name, (800, 600)).into_drawing_area();
@@ -83,6 +85,7 @@ fn main() {
         println!("Wrote {}", name);
     }
 
+    // Print summary if no output options specified
     if !args.iter().any(|a| a == "--output-csv" || a == "--plot-svg") {
         println!("x_len={} y_len={} y_first={:.3} y_last={:.3}", ccdf_x.len(), ccdf_y.len(), ccdf_y.first().unwrap(), ccdf_y.last().unwrap());
         println!("Pass --output-csv to export to output/ccdf.csv or --plot-svg to plot to output/ccdf.svg");
