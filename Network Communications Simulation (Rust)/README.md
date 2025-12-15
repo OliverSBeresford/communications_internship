@@ -1,11 +1,11 @@
 # Network Communications Simulation (Rust)
 
-This crate is a Rust port of the MATLAB codebase in `Network Communications Simulation/`. It provides numeric utilities and RF models for coverage, SINR, and optimization with improved code quality through explicit, readable variable naming.
+This crate is a Rust port of the MATLAB codebase in `Network Communications Simulation/`. It provides numeric utilities and RF models for coverage, SINR, and optimization.
 
 ## Structure
 
 ### Core Modules
-- `src/lib.rs`: Public API aggregating modules
+- `src/lib.rs`: Aggregates modules
 - `src/geom.rs`: Geometric utilities - distance calculations, nearest point helpers
 - `src/rf.rs`: RF propagation models - LOS/NLOS path loss, diffraction, small-scale fading
 - `src/metrics.rs`: Performance metrics - SINR calculations, CCDF computation, power conversions
@@ -59,13 +59,11 @@ All outputs are saved to the `output/` directory:
 - `output/ccdf.svg` - CCDF plot visualization
 - `output/manhattan.svg` - Manhattan grid layout visualization
 
-## Code Quality
+## Notes
 
-The codebase follows Rust best practices with:
-- **Explicit variable naming** - All variables use clear, descriptive names (e.g., `distance_meters`, `channel_params`, `useful_power`)
 - **Type safety** - Strong typing for all power units (dBm vs linear), distances, and parameters
 - **Reproducibility** - Seeded RNG for all random processes
-- **Comprehensive testing** - Unit tests covering all core functionality
+- **Testing** - Unit tests covering all core functionality, but don't test all function
 
 ## Implementation Notes
 
