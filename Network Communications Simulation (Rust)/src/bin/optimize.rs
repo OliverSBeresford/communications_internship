@@ -15,10 +15,12 @@ fn main() {
     
     println!("Generated MPLP grid: {} avenues, {} streets", avenues.len(), streets.len());
 
+    // Determine budget of base stations, in this case based on density per unit length of roads
     let target_deployment_count = ((grid_size * base_station_density) * (avenues.len() + streets.len()) as f64).round() as usize;
 
     let base_spacing_distance = 20.0;
     let candidates_per_road = (grid_size / base_spacing_distance).round() as usize;
+    // Generate candidate base station positions along avenues and streets
     let mut candidate_positions: Vec<Point> = Vec::with_capacity((avenues.len() + streets.len()) * candidates_per_road);
     for &avenue_x in &avenues {
         for position_idx in 0..candidates_per_road {
@@ -33,6 +35,7 @@ fn main() {
         }
     }
 
+    // Initial selection mask for base stations
     let mut selection_mask = vec![false; candidate_positions.len()];
     // deterministic initial selection: first N (mirrors MATLAB random choice if seeded separately)
     for idx in 0..target_deployment_count.min(selection_mask.len()) { selection_mask[idx] = true; }
@@ -63,18 +66,25 @@ fn main() {
         threshold_db: 10.0,
     };
 
+    // Initial fitness evaluation
     let mut base_fitness = fitness_value(&mut data);
+    // Store recent fitness values for convergence check (10 iterations, checking relative std dev)
     let mut recent_fitness_values: Vec<f64> = vec![-f64::INFINITY; 10];
 
     for iteration in 0..50 { // limited iterations for demo
+        // Identify best candidates to activate/deactivate
         let (best_activation_idx, best_deactivation_idx) = best_candidates(&mut data, &candidate_positions, candidates_per_road, &mut selection_mask, base_fitness);
         selection_mask[best_activation_idx] = true;
         selection_mask[best_deactivation_idx] = false;
         data.base_stations = current_bs(&candidate_positions, &selection_mask);
+
+        // Re-evaluate fitness after adjustments
         let new_fitness = fitness_value(&mut data);
         recent_fitness_values.remove(9);
         recent_fitness_values.insert(0, new_fitness as f64);
         println!("iter {} fitness {} -> {}", iteration, base_fitness, new_fitness);
+
+        // Check for convergence based on relative standard deviation of recent fitness values
         if recent_fitness_values.iter().all(|v| v.is_finite()) {
             if let Some(relative_std_dev) = rel_std(&recent_fitness_values) {
                 if relative_std_dev < 0.05 { break; }
@@ -94,6 +104,7 @@ fn current_bs(candidates: &[Point], select: &[bool]) -> Vec<Point> {
         .collect()
 }
 
+// Calculate relative standard deviation of a slice of f64 values
 fn rel_std(values: &[f64]) -> Option<f64> {
     if values.is_empty() { return None; }
     let average: f64 = values.iter().sum::<f64>() / values.len() as f64;
