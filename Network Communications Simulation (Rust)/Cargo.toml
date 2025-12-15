@@ -1,0 +1,36 @@
+[package]
+name = "network_comms_sim"
+version = "0.1.0"
+edition = "2021"
+authors = ["Oliver B."]
+description = "Rust port of Network Communications Simulation (MATLAB)"
+license = "MIT"
+
+[dependencies]
+rand = "0.8"
+statrs = "0.16"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+csv = "1"
+plotters = { version = "0.3", default-features = false, features = ["line_series"] }
+plotters-svg = "0.3"
+
+[lib]
+name = "network_comms_sim"
+path = "src/lib.rs"
+
+[[bin]]
+name = "coverage_example"
+path = "src/bin/coverage_example.rs"
+
+[[bin]]
+name = "coverage_ccdf"
+path = "src/bin/coverage_ccdf.rs"
+
+[[bin]]
+name = "optimize"
+path = "src/bin/optimize.rs"
+
+[[bin]]
+name = "plot_manhattan"
+path = "src/bin/plot_manhattan.rs"
