@@ -31,13 +31,20 @@ pub fn small_scale_fading_db(rng: &mut impl Rng, shadowing_std_db: f64) -> f64 {
     normal.inverse_cdf(uniform_random)
 }
 
-pub fn diffraction_loss_db(distance_meters: f64, knife_edge_height_m: f64, wavelength_m: f64) -> f64 {
-    // Simplified knife-edge diffraction model using Fresnel parameter
-    let fresnel_parameter = knife_edge_height_m * (2.0 / (wavelength_m * distance_meters)).sqrt();
-    // Approximate loss in dB
-    if fresnel_parameter <= -0.78 {
-        0.0
-    } else {
-        6.9 + 20.0 * ((fresnel_parameter - 0.1).sqrt() + fresnel_parameter - 1.0).log10()
-    }
+/// Calculate fictitious distance for Berg recursive diffraction model
+/// 
+/// The Berg model accounts for first-order diffraction by computing an effective
+/// distance that includes a diffraction penalty term.
+/// 
+/// # Arguments
+/// * `vertical_distance` - Vertical distance component |y2 - y1|
+/// * `horizontal_distance` - Horizontal distance component |x2 - x1|
+/// 
+/// # Returns
+/// Fictitious distance for path loss calculation
+pub fn berg_diffraction_distance(vertical_distance: f64, horizontal_distance: f64) -> f64 {
+    // Berg recursive model parameter q90 = sqrt(0.031 / (4*pi))
+    const Q90: f64 = 0.049735919716217296; // Precomputed for efficiency
+    
+    vertical_distance + horizontal_distance + Q90 * vertical_distance * horizontal_distance
 }

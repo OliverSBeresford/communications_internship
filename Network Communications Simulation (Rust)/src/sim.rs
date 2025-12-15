@@ -1,4 +1,5 @@
 use crate::geom::{euclidean_distance, Point};
+use crate::rf::berg_diffraction_distance;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use serde::{Deserialize, Serialize};
@@ -143,8 +144,7 @@ pub fn diffraction_power_linear(data: &SimulationData, transmitter: Point) -> f6
     if data.diffraction_order <= 0 { return 0.0; }
     let vertical_distance = (data.receiver.y - transmitter.y).abs();
     let horizontal_distance = (data.receiver.x - transmitter.x).abs();
-    let fresnel_parameter = (0.031f64 / (4.0 * std::f64::consts::PI)).sqrt();
-    let effective_distance = vertical_distance + horizontal_distance + fresnel_parameter * vertical_distance * horizontal_distance;
+    let effective_distance = berg_diffraction_distance(vertical_distance, horizontal_distance);
     let received_power = data.a * effective_distance.powf(-data.alpha);
     received_power.min(data.source_power)
 }
