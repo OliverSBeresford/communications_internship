@@ -1,12 +1,20 @@
-use network_comms_sim::{geom::Point, opt::{best_candidates, fitness_value}, sim::SimulationData};
+use network_comms_sim::{geom::Point, opt::{best_candidates, fitness_value}, sim::{generate_manhattan, SimulationData}};
 
 fn main() {
-    // Initialize data similar to MATLAB optimizePlacement.m
+    // Initialize data using random Manhattan grid (MPLP - Manhattan Poisson Line Process)
     let grid_size = 500.0;
-    let avenues: Vec<f64> = (-4..=4).map(|i| i as f64 * 50.0).collect();
-    let streets: Vec<f64> = (-4..=4).map(|i| i as f64 * 50.0).collect();
-
+    let avenue_density = 7.0 / 1000.0;
+    let street_density = 7.0 / 1000.0;
     let base_station_density = 1.5 / 1000.0;
+    let seed = 42; // Seed for reproducibility
+    
+    // Generate random Manhattan layout using Poisson Point Process
+    let layout = generate_manhattan(grid_size, avenue_density, street_density, 0.0, seed, false);
+    let avenues = layout.avenues;
+    let streets = layout.streets;
+    
+    println!("Generated MPLP grid: {} avenues, {} streets", avenues.len(), streets.len());
+
     let target_deployment_count = ((grid_size * base_station_density) * (avenues.len() + streets.len()) as f64).round() as usize;
 
     let base_spacing_distance = 20.0;
@@ -47,8 +55,8 @@ fn main() {
         diffraction_order: 1,
         ave_counts: vec![avenues.len()],
         connect_to_nlos: true,
-        lambda_ave: base_station_density, // not used here
-        lambda_st: base_station_density,
+        lambda_ave: avenue_density,
+        lambda_st: street_density,
         lambda_base: base_station_density,
         create_base_stations: false,
         computation_nodes: 100,
