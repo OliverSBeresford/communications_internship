@@ -12,6 +12,7 @@ fn main() {
     let street_density = 7.0 / 1000.0;
     let seed = 42; // Seed for reproducibility
 
+    // Right now, we are ignoring NLOS and diffraction for speed and tractability
     let mut data = SimulationData {
         source_power: 1.0,
         receiver: Point { x: 0.0, y: 0.0 },
@@ -51,6 +52,7 @@ fn main() {
     for &base_station_density in &density_range {
         data.lambda_base = base_station_density;
 
+        // Calculate average SINR for this density
         let simulations = 1e4 as usize; // Use fewer simulations per density for speed
         let avg_sinr = simulate_average_sinr(&mut data, simulations, seed);
         results.push((base_station_density, avg_sinr));
@@ -74,11 +76,13 @@ fn main() {
     let root = SVGBackend::new(svg_name, (800, 600)).into_drawing_area();
     root.fill(&WHITE).unwrap();
 
+    // Determine axis ranges
     let density_min = results.iter().map(|(d, _)| d).cloned().fold(f64::INFINITY, f64::min);
     let density_max = results.iter().map(|(d, _)| d).cloned().fold(f64::NEG_INFINITY, f64::max);
     let sinr_min = results.iter().map(|(_, s)| s).cloned().fold(f64::INFINITY, f64::min);
     let sinr_max = results.iter().map(|(_, s)| s).cloned().fold(f64::NEG_INFINITY, f64::max);
 
+    // Create chart with logarithmic x-axis
     let mut chart = ChartBuilder::on(&root)
         .caption("Average SINR vs Base Station Density (log scale)", ("sans-serif", 20))
         .margin(20)
