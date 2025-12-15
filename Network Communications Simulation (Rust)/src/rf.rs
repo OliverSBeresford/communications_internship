@@ -44,7 +44,7 @@ pub fn small_scale_fading_db(rng: &mut impl Rng, shadowing_std_db: f64) -> f64 {
 /// Fictitious distance for path loss calculation
 pub fn berg_diffraction_distance(vertical_distance: f64, horizontal_distance: f64) -> f64 {
     // Berg recursive model parameter q90 = sqrt(0.031 / (4*pi))
-    const Q90: f64 = 0.049735919716217296; // Precomputed for efficiency
+    const Q90: f64 = 0.04966791336390505; // Precomputed for efficiency
     
     vertical_distance + horizontal_distance + Q90 * vertical_distance * horizontal_distance
 }
