@@ -86,7 +86,6 @@ fn seeded_rng(data: &SimulationData, base_station: Point, index: u64) -> StdRng 
 pub fn best_candidates(
     data: &mut SimulationData,
     candidates: &[Point],
-    candidates_per_road: usize,
     candidate_select: &mut [bool],
     base_fitness: i64,
 ) -> (usize, usize) {
@@ -94,8 +93,6 @@ pub fn best_candidates(
     let mut best_activation_index = 0usize;
     let mut deactivation_improvement = f64::NEG_INFINITY;
     let mut best_deactivation_index = 0usize;
-
-    let num_avenues = data.avenues.len();
 
     // Evaluate each candidate for potential activation or deactivation
     for candidate_idx in 0..candidates.len() {

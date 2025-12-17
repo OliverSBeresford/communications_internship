@@ -73,7 +73,7 @@ fn main() {
 
     for iteration in 0..50 { // limited iterations for demo
         // Identify best candidates to activate/deactivate
-        let (best_activation_idx, best_deactivation_idx) = best_candidates(&mut data, &candidate_positions, candidates_per_road, &mut selection_mask, base_fitness);
+        let (best_activation_idx, best_deactivation_idx) = best_candidates(&mut data, &candidate_positions, &mut selection_mask, base_fitness);
         selection_mask[best_activation_idx] = true;
         selection_mask[best_deactivation_idx] = false;
         data.base_stations = current_bs(&candidate_positions, &selection_mask);
