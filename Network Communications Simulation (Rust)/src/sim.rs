@@ -156,14 +156,16 @@ fn sinr_linear(useful_power: f64, noise_power: f64, total_interference: f64) -> 
     if sinr < 0.0 { 0.0 } else { sinr }
 }
 
-pub fn simulate_coverage_ccdf(mut data: SimulationData, simulations: usize, num_bins: usize, seed: u64) -> (Vec<f64>, Vec<f64>) {
+pub fn simulate_coverage_ccdf(data: &mut SimulationData, simulations: usize, num_bins: usize, seed: u64, progress_bar: bool) -> (Vec<f64>, Vec<f64>) {
     let mut results_db: Vec<f64> = Vec::with_capacity(simulations);
 
     // Progress bar for simulation iterations
     let pb = ProgressBar::new(simulations as u64);
-    pb.set_style(ProgressStyle::with_template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({percent}%) - simulating CCDF")
-        .unwrap()
-        .progress_chars("=>-"));
+    if progress_bar {
+        pb.set_style(ProgressStyle::with_template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({percent}%) - simulating CCDF")
+            .unwrap()
+            .progress_chars("=>-"));
+    }
 
     for iteration_idx in 0..simulations {
         // Regenerate a fresh Manhattan layout each simulation
@@ -215,10 +217,10 @@ pub fn simulate_coverage_ccdf(mut data: SimulationData, simulations: usize, num_
         results_db.push(10.0 * sinr.log10());
 
         // update progress bar
-        pb.inc(1);
+        if progress_bar { pb.inc(1); }
     }
 
-    pb.finish_with_message("CCDF simulation complete");
+    if progress_bar { pb.finish_with_message("CCDF simulation complete"); }
 
     crate::metrics::ccdf(&results_db, num_bins)
 }

@@ -14,7 +14,7 @@ fn main() {
     let base_station_density = 1500.0 / 1000.0;
     let seed = 42; // Seed for reproducibility
 
-    let data = SimulationData {
+    let mut data = SimulationData {
         source_power: 1.0,
         receiver: Point { x: 0.0, y: 0.0 },
         alpha: 4.0,
@@ -42,7 +42,7 @@ fn main() {
 
     let simulations = 1e4 as usize;
     let num_bins = simulations / 200;
-    let (ccdf_x, ccdf_y) = simulate_coverage_ccdf(data, simulations, num_bins, seed);
+    let (ccdf_x, ccdf_y) = simulate_coverage_ccdf(&mut data, simulations, num_bins, seed, true);
 
     // Ensure output directory exists
     create_dir_all("output").expect("Failed to create output directory");
