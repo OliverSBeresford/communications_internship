@@ -18,6 +18,8 @@ This crate is a Rust port of the MATLAB codebase in `Network Communications Simu
 - `src/bin/coverage_ccdf.rs`: Full CCDF simulation with CSV/SVG export
 - `src/bin/optimize.rs`: Base station placement optimization
 - `src/bin/plot_manhattan.rs`: Manhattan grid visualization
+- `src/bin/density.rs`: Plots average SINR as a function of base station density
+- `src/bin/density_ccdf.rs`: Plots coverage probability of at least 15 decibels as a function of base station density
 
 ### Tests
 - `tests/basic.rs`: Unit tests for geometry, CCDF, power calculations, Manhattan generation
