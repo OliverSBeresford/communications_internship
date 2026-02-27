@@ -15,6 +15,7 @@ csv = "1"
 plotters = { version = "0.3", default-features = false, features = ["line_series"] }
 plotters-svg = "0.3"
 indicatif = "0.17"
+rayon = "1.5"
 
 [lib]
 name = "network_comms_sim"
