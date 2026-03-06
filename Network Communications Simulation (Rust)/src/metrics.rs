@@ -1,3 +1,5 @@
+use core::panic;
+
 use crate::geom::Point;
 use crate::rf::{power_los_dbm, power_nlos_dbm, small_scale_fading_db, ChannelParams};
 use rand::prelude::*;
@@ -42,18 +44,21 @@ pub fn received_power_dbm(
 // Compute CCDF of provided values with fixed number of bins.
 pub fn ccdf(values: &[f64], num_bins: usize) -> (Vec<f64>, Vec<f64>) {
     assert!(num_bins > 1);
+    
     if values.is_empty() {
-        return (Vec::new(), Vec::new());
+        panic!("Cannot compute CCDF of empty values");
     }
 
-    let min_value = values
+    let min_value: f64 = values
         .iter()
         .copied()
+        .filter(|&v| !v.is_infinite())
         .fold(f64::INFINITY, |a, b| a.min(b));
     let max_value = values
         .iter()
         .copied()
         .fold(f64::NEG_INFINITY, |a, b| a.max(b));
+
     let span = (max_value - min_value).max(std::f64::EPSILON);
     let bin_width = span / num_bins as f64;
 
