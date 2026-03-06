@@ -83,6 +83,65 @@ pub fn generate_manhattan(
     ManhattanLayout { avenues, streets, base_stations, ave_counts }
 }
 
+/// Generates a random Manhattan layout using a Poisson Point Process for avenues and streets, and optionally places base stations along them.
+/// - `size`: The size of the grid (e.g., 1000 for a 1km x 1km area).
+/// - `lambda_ave`: Density of avenues (average number of avenues per unit length).
+/// - `lambda_st`: Density of streets (average number of streets per unit length).
+/// - `lambda_base`: Density of base stations (average number of base stations per square kilometer).
+/// - `seed`: Random seed for reproducibility.
+/// - `create_base_stations`: Whether to generate base stations based on the provided density.
+pub fn generate_manhattan_simple(
+    size: f64,
+    lambda_ave: f64,
+    lambda_st: f64,
+    lambda_base: f64,
+    seed: u64,
+    create_base_stations: bool,
+) -> ManhattanLayout {
+    // Generate number of avenues and streets based on Poisson distribution, but don't actually generate the streets and avenues since we won't use them for NLOS or diffraction calculations
+    let mut rng = StdRng::seed_from_u64(seed);
+
+    // Avg number of avenues and streets based on density and size, ensuring non-negative values
+    let mean_ave = (size * lambda_ave).max(0.0);
+    let mean_st = (size * lambda_st - 1.0).max(0.0);
+
+    // Number of avenues and streets based on Poisson distribution, ensuring at least 1 street (y=0) and non-negative counts
+    let num_avenues = if mean_ave > 0.0 {
+        Poisson::new(mean_ave).unwrap().sample(&mut rng) as usize
+    } else { 0 };
+    let num_streets = if mean_st > 0.0 {
+        Poisson::new(mean_st - 1.0).unwrap().sample(&mut rng) as usize + 1
+    } else { 1 }; // include y=0
+
+    // Don't actually generate the avenues and streets since we won't use them for NLOS or diffraction calculations
+    let avenues = Vec::with_capacity(0);
+    let mut streets = Vec::with_capacity(1);
+    streets.push(0.0);
+
+    let mut base_stations = Vec::new();
+    let mut ave_counts = Vec::with_capacity(0);
+
+    if create_base_stations {
+        let mean_base_stations_total = (lambda_base * size * size / 1e6).max(0.0);
+        let num_roads = num_avenues + num_streets;
+        let mean_per_road = if num_roads > 0 { mean_base_stations_total / num_roads as f64 } else { 0.0 };
+        let poisson_bs = if mean_per_road > 0.0 { Some(Poisson::new(mean_per_road).unwrap()) } else { None };
+
+        // Place all base stations along the y=0 street for simplicity, since we won't be doing NLOS or diffraction calculations that depend on the actual layout
+        for &street in &streets {
+            let count = poisson_bs.as_ref().map(|p| p.sample(&mut rng) as usize).unwrap_or(0);
+            for _ in 0..count {
+                let x = rng.gen::<f64>() * size - size / 2.0;
+                base_stations.push(Point { x, y: street });
+            }
+        }
+    } else {
+        ave_counts.resize(num_avenues, 0);
+    }
+
+    ManhattanLayout { avenues, streets, base_stations, ave_counts }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SimulationData {
     pub source_power: f64,      // transmitted power (linear units)
@@ -114,6 +173,15 @@ pub struct SimulationData {
 impl SimulationData {
     pub fn generate_layout(&mut self) {
         let seed = (rand::thread_rng().gen::<f64>() * 1e12) as u64; // Generate a random seed for layout generation
+
+        if !self.use_nlos && !self.use_diffraction {
+            let layout = generate_manhattan_simple(self.size, self.lambda_ave, self.lambda_st, self.lambda_base, seed, self.create_base_stations);
+            self.avenues = layout.avenues;
+            self.streets = layout.streets;
+            self.base_stations = layout.base_stations;
+            self.ave_counts = layout.ave_counts;
+            return;
+        }
 
         let layout = generate_manhattan(
             self.size,
@@ -308,4 +376,26 @@ pub fn simulate_average_sinr(data: &mut SimulationData, simulations: usize) -> f
     // Return mean SINR in dB
     let mean_linear = results_linear.iter().sum::<f64>() / results_linear.len() as f64;
     10.0 * mean_linear.log10()
+}
+
+/// Simulate average SINR as a function of base station density, sweeping over a range of densities and returning the results as a vector of (density, average_sinr_db) pairs.
+/// - `data`: A mutable reference to the simulation data, which will be updated with different base station densities.
+/// - `simulations`: The number of simulation iterations to run for each density point.
+pub fn simulate_sinr_vs_density(data: &mut SimulationData, simulations: usize) -> Vec<(f64, f64)> {
+    // Sweep across base station densities on a logarithmic grid (1e-3 to 1)
+    let density_range: Vec<f64> = (0..=24)
+        .map(|i| 10f64.powf(-0.3 + i as f64 * (2.3 / 24.0)))
+        .collect();
+    let mut results: Vec<(f64, f64)> = Vec::new();
+
+    println!("Sweeping base station densities...");
+    for &base_station_density in &density_range {
+        data.lambda_base = base_station_density;
+
+        // Calculate average SINR for this density
+        let avg_sinr = simulate_average_sinr(data, simulations);
+        results.push((base_station_density, avg_sinr));
+        println!("Density {:.2}: avg SINR = {:.3} dB", base_station_density, avg_sinr);
+    }
+    results
 }

@@ -1,4 +1,4 @@
-use network_comms_sim::{geom::Point, sim::{SimulationData, simulate_average_sinr}};
+use network_comms_sim::{geom::Point, sim::{SimulationData, simulate_sinr_vs_density}};
 use std::fs::{File, create_dir_all};
 use std::path::Path;
 use csv::Writer;
@@ -41,25 +41,11 @@ fn main() {
     // Ensure output directory exists
     create_dir_all("output").expect("Failed to create output directory");
 
-    // Sweep across base station densities on a logarithmic grid (1e-3 to 1)
-    let density_range: Vec<f64> = (0..=24)
-        .map(|i| 10f64.powf(-3.0 + i as f64 * (3.0 / 24.0)))
-        .collect();
-    let mut results: Vec<(f64, f64)> = Vec::new();
-
-    println!("Sweeping base station densities...");
-    for &base_station_density in &density_range {
-        data.lambda_base = base_station_density;
-
-        // Calculate average SINR for this density
-        let simulations = 1e4 as usize; // Use fewer simulations per density for speed
-        let avg_sinr = simulate_average_sinr(&mut data, simulations);
-        results.push((base_station_density, avg_sinr));
-        println!("Density {:.2}: avg SINR = {:.3} dB", base_station_density, avg_sinr);
-    }
+    let simulations = 1e5 as usize;
+    let results = simulate_sinr_vs_density(&mut data, simulations);
 
     // Write results to CSV
-    let csv_name = "output/density_vs_sinr.csv";
+    let csv_name = &format!("output/density_vs_sinr_{}.csv", simulations);
     let csv_path = Path::new(csv_name);
     let csv_file = File::create(csv_path).expect("create csv");
     let mut csv_writer = Writer::from_writer(csv_file);
@@ -71,7 +57,7 @@ fn main() {
     println!("Wrote {} points to {}", results.len(), csv_name);
 
     // Plot results as SVG
-    let svg_name = "output/density_vs_sinr.svg";
+    let svg_name = &format!("output/density_vs_sinr_{}.svg", simulations);
     let root = SVGBackend::new(svg_name, (800, 600)).into_drawing_area();
     root.fill(&WHITE).unwrap();
 
