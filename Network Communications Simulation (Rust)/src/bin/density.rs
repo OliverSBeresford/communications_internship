@@ -10,7 +10,6 @@ fn main() {
     let grid_size = 1000.0;
     let avenue_density = 7.0 / 1000.0;
     let street_density = 7.0 / 1000.0;
-    let seed = 42; // Seed for reproducibility
 
     // Right now, we are ignoring NLOS and diffraction for speed and tractability
     let mut data = SimulationData {
@@ -54,7 +53,7 @@ fn main() {
 
         // Calculate average SINR for this density
         let simulations = 1e4 as usize; // Use fewer simulations per density for speed
-        let avg_sinr = simulate_average_sinr(&mut data, simulations, seed);
+        let avg_sinr = simulate_average_sinr(&mut data, simulations);
         results.push((base_station_density, avg_sinr));
         println!("Density {:.2}: avg SINR = {:.3} dB", base_station_density, avg_sinr);
     }

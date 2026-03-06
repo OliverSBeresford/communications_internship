@@ -15,6 +15,13 @@ pub struct ManhattanLayout {
     pub ave_counts: Vec<usize>,
 }
 
+/// Generates a random Manhattan layout using a Poisson Point Process for avenues and streets, and optionally places base stations along them.
+/// - `size`: The size of the grid (e.g., 1000 for a 1km x 1km area).
+/// - `lambda_ave`: Density of avenues (average number of avenues per unit length).
+/// - `lambda_st`: Density of streets (average number of streets per unit length).
+/// - `lambda_base`: Density of base stations (average number of base stations per square kilometer).
+/// - `seed`: Random seed for reproducibility.
+/// - `create_base_stations`: Whether to generate base stations based on the provided density.
 pub fn generate_manhattan(
     size: f64,
     lambda_ave: f64,
@@ -104,12 +111,81 @@ pub struct SimulationData {
     pub threshold_db: f64,        // threshold in dB for fitness
 }
 
+impl SimulationData {
+    pub fn generate_layout(&mut self) {
+        let seed = (rand::thread_rng().gen::<f64>() * 1e12) as u64; // Generate a random seed for layout generation
+
+        let layout = generate_manhattan(
+            self.size,
+            self.lambda_ave,
+            self.lambda_st,
+            self.lambda_base,
+            seed,
+            self.create_base_stations,
+        );
+        self.avenues = layout.avenues;
+        self.streets = layout.streets;
+        self.base_stations = layout.base_stations;
+        self.ave_counts = layout.ave_counts;
+    }
+
+    pub fn layout_summary(&self) -> String {
+        format!("Avenues: {}, Streets: {}, Base stations: {}", 
+            self.avenues.len(), self.streets.len(), self.base_stations.len())
+    }
+
+    pub fn display_layout(&self) {
+        println!("{}", self.layout_summary());
+    }
+}
+
+impl Default for SimulationData {
+    fn default() -> Self {
+        SimulationData {
+            source_power: 1.0,
+            receiver: Point { x: 0.0, y: 0.0 },
+            alpha: 4.0,
+            a: 1.0,
+            fading_mean: 1.0,
+            noise_power: 4e-15, // -114 dBmW noise floor
+            base_stations: Vec::new(),
+            penetration_loss: 0.9,
+            avenues: Vec::new(),
+            streets: Vec::new(),
+            use_nlos: false,
+            use_diffraction: false,
+            size: 5000.0, // 5km x 5km area
+            path_loss_nlos: false,
+            diffraction_order: 0,
+            ave_counts: Vec::new(),
+            connect_to_nlos: false,
+            lambda_ave: 7.0 / 1000.0,
+            lambda_st: 7.0 / 1000.0,
+            lambda_base: 15.0, // per km^2
+            create_base_stations: true,
+            computation_nodes: 100,
+            threshold_db: 10.0,
+        }
+    }
+}
+
+/// Generates a random fading value from an exponential distribution with the specified mean.
+/// Rayleigh fading
+/// - `rng`: A mutable reference to a random number generator.
+/// - `mean_fade`: The mean value of the exponential distribution, which controls the severity of fading (e.g., 1.0 for standard Rayleigh fading).
+/// Returns a random value representing the fading effect.
 pub fn small_scale_fading_exp(rng: &mut impl Rng, mean_fade: f64) -> f64 {
     let exponential = Exp::new(1.0 / mean_fade).unwrap(); // Exp with mean=mean_fade
     let uniform_sample: f64 = rng.gen();
     exponential.inverse_cdf(uniform_sample)
 }
 
+/// Counts the number of roads (avenues and streets) crossed by the line between the receiver and a given transmitter.
+/// This is used to determine the number of building penetrations for NLOS path loss calculations.
+/// - `data`: The simulation data containing the receiver position and road locations.
+/// - `transmitter`: The position of the transmitter (base station).
+/// 
+/// Returns the total number of roads crossed, which corresponds to the number of building penetrations.
 pub fn num_roads_crossed(data: &SimulationData, transmitter: Point) -> i32 {
     let mut num_roads = 0;
     let receiver_x = data.receiver.x;
@@ -152,13 +228,44 @@ pub fn diffraction_power_linear(data: &SimulationData, transmitter: Point) -> f6
     received_power.min(data.source_power)
 }
 
-fn sinr_linear(useful_power: f64, noise_power: f64, total_interference: f64) -> f64 {
+pub fn sinr_linear(data: &mut SimulationData) -> f64 {
+    // Place user at (0,0) each time, ensuring y=0 street exists from generator
+    data.receiver = Point { x: 0.0, y: 0.0 };
+
+    let mut useful_power = 0.0;
+    let mut total_interference = 0.0;
+    let num_avenue_bases: usize = if data.diffraction_order > 0 && !data.ave_counts.is_empty() {
+        data.ave_counts.iter().sum()
+    } else { 0 };
+
+    let mut rng = rand::thread_rng();
+
+    for (base_idx, &base_station) in data.base_stations.iter().enumerate() {
+        let same_street = base_station.x == data.receiver.x || base_station.y == data.receiver.y;
+        if same_street {
+            let power = power_los_linear(&mut rng, &data, base_station);
+            total_interference += power;
+            if power > useful_power { useful_power = power; }
+        } else if data.use_nlos {
+            dbg!(&data);
+            let power = power_nlos_linear(&mut rng, &data, base_station);
+            total_interference += power;
+            if power > useful_power && data.connect_to_nlos { useful_power = power; }
+        }
+        if !same_street && data.diffraction_order > 0 && data.use_diffraction && base_idx < num_avenue_bases {
+            dbg!(&data);
+            let power = diffraction_power_linear(&data, base_station);
+            total_interference += power;
+            if power > useful_power && data.connect_to_nlos { useful_power = power; }
+        }
+    }
+
     if useful_power == 0.0 { return 0.0; }
-    let sinr = useful_power / (noise_power + total_interference - useful_power);
+    let sinr = useful_power / (data.noise_power + total_interference - useful_power);
     if sinr < 0.0 { 0.0 } else { sinr }
 }
 
-pub fn simulate_coverage_ccdf(data: &mut SimulationData, simulations: usize, num_bins: usize, seed: u64, progress_bar: bool) -> (Vec<f64>, Vec<f64>) {
+pub fn simulate_coverage_ccdf(data: &mut SimulationData, simulations: usize, num_bins: usize, progress_bar: bool) -> (Vec<f64>, Vec<f64>) {
     let mut results_db: Vec<f64> = Vec::with_capacity(simulations);
 
     // Progress bar for simulation iterations
@@ -169,53 +276,12 @@ pub fn simulate_coverage_ccdf(data: &mut SimulationData, simulations: usize, num
             .progress_chars("=>-"));
     }
 
-    for iteration_idx in 0..simulations {
+    for _ in 0..simulations {
         // Regenerate a fresh Manhattan layout each simulation
-        let layout = generate_manhattan(
-            data.size,
-            data.lambda_ave,
-            data.lambda_st,
-            data.lambda_base,
-            seed + iteration_idx as u64,
-            data.create_base_stations,
-        );
-        data.avenues = layout.avenues;
-        data.streets = layout.streets;
-        data.base_stations = layout.base_stations;
-        data.ave_counts = layout.ave_counts;
+        data.generate_layout();
 
-        // Place user at (0,0) each time, ensuring y=0 street exists from generator
-        data.receiver = Point { x: 0.0, y: 0.0 };
-
-        let mut useful_power = 0.0;
-        let mut total_interference = 0.0;
-        let num_avenue_bases: usize = if data.diffraction_order > 0 && !data.ave_counts.is_empty() {
-            data.ave_counts.iter().sum()
-        } else { 0 };
-
-        let mut rng = StdRng::seed_from_u64(seed ^ (iteration_idx as u64 + 1));
-
-        for (base_idx, &base_station) in data.base_stations.iter().enumerate() {
-            let same_street = base_station.x == data.receiver.x || base_station.y == data.receiver.y;
-            if same_street {
-                let power = power_los_linear(&mut rng, &data, base_station);
-                total_interference += power;
-                if power > useful_power { useful_power = power; }
-            } else if data.use_nlos {
-                dbg!(&data);
-                let power = power_nlos_linear(&mut rng, &data, base_station);
-                total_interference += power;
-                if power > useful_power && data.connect_to_nlos { useful_power = power; }
-            }
-            if !same_street && data.diffraction_order > 0 && data.use_diffraction && base_idx < num_avenue_bases {
-                dbg!(&data);
-                let power = diffraction_power_linear(&data, base_station);
-                total_interference += power;
-                if power > useful_power && data.connect_to_nlos { useful_power = power; }
-            }
-        }
-
-        let sinr = sinr_linear(useful_power, data.noise_power, total_interference);
+        // Calculate SINR for this simulation iteration
+        let sinr = sinr_linear(data);
         results_db.push(10.0 * sinr.log10());
 
         // update progress bar
@@ -227,54 +293,15 @@ pub fn simulate_coverage_ccdf(data: &mut SimulationData, simulations: usize, num
     crate::metrics::ccdf(&results_db, num_bins)
 }
 
-pub fn simulate_average_sinr(data: &mut SimulationData, simulations: usize, seed: u64) -> f64 {
+pub fn simulate_average_sinr(data: &mut SimulationData, simulations: usize) -> f64 {
     let mut results_linear: Vec<f64> = Vec::with_capacity(simulations);
 
-    for iteration_idx in 0..simulations {
+    for _ in 0..simulations {
         // Regenerate a fresh Manhattan layout each simulation
-        let layout = generate_manhattan(
-            data.size,
-            data.lambda_ave,
-            data.lambda_st,
-            data.lambda_base,
-            seed + iteration_idx as u64,
-            data.create_base_stations,
-        );
-        data.avenues = layout.avenues;
-        data.streets = layout.streets;
-        data.base_stations = layout.base_stations;
-        data.ave_counts = layout.ave_counts;
+        data.generate_layout();
 
-        // Place user at (0,0) each time
-        data.receiver = Point { x: 0.0, y: 0.0 };
-
-        let mut useful_power = 0.0;
-        let mut total_interference = 0.0;
-        let num_avenue_bases: usize = if data.diffraction_order > 0 && !data.ave_counts.is_empty() {
-            data.ave_counts.iter().sum()
-        } else { 0 };
-
-        let mut rng = StdRng::seed_from_u64(seed ^ (iteration_idx as u64 + 1));
-
-        for (base_idx, &base_station) in data.base_stations.iter().enumerate() {
-            let same_street = base_station.x == data.receiver.x || base_station.y == data.receiver.y;
-            if same_street {
-                let power = power_los_linear(&mut rng, &data, base_station);
-                total_interference += power;
-                if power > useful_power { useful_power = power; }
-            } else if data.use_nlos {
-                let power = power_nlos_linear(&mut rng, &data, base_station);
-                total_interference += power;
-                if power > useful_power && data.connect_to_nlos { useful_power = power; }
-            }
-            if !same_street && data.diffraction_order > 0 && data.use_diffraction && base_idx < num_avenue_bases {
-                let power = diffraction_power_linear(&data, base_station);
-                total_interference += power;
-                if power > useful_power && data.connect_to_nlos { useful_power = power; }
-            }
-        }
-
-        let sinr = sinr_linear(useful_power, data.noise_power, total_interference);
+        // Calculate SINR for this simulation iteration
+        let sinr = sinr_linear(data);
         results_linear.push(sinr);
     }
 

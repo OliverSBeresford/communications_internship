@@ -8,7 +8,7 @@ use plotters_svg::SVGBackend;
 
 fn main() {
     // Randomly generate Manhattan layout (Poisson PPP) similar to manhattan.m
-    let grid_size = 1000.0;
+    let grid_size = 5000.0;
     let avenue_density = 7.0 / 1000.0;
     let street_density = 7.0 / 1000.0;
     let base_station_density = 20.0;
@@ -19,7 +19,7 @@ fn main() {
         alpha: 4.0,
         a: 1.0,
         fading_mean: 1.0,
-        noise_power: 0.01,
+        noise_power: 4e-15, // -114 dBmW noise floor
         base_stations: Vec::new(),
         penetration_loss: 0.9,
         avenues: Vec::new(),
@@ -41,7 +41,7 @@ fn main() {
 
     let simulations = 1e4 as usize;
     let num_bins = simulations / 200;
-    let (ccdf_x, ccdf_y) = simulate_coverage_ccdf(&mut data, simulations, num_bins, seed, true);
+    let (ccdf_x, ccdf_y) = simulate_coverage_ccdf(&mut data, simulations, num_bins, true);
 
     // Ensure output directory exists
     create_dir_all("output").expect("Failed to create output directory");
@@ -49,7 +49,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     // Output CSV if requested
     if args.iter().any(|a| a == "--output-csv") {
-        let name = format!("output/ccdf_{}_{}.csv", seed, base_station_density * 1000.0);
+        let name = format!("output/ccdf_{}_per_km2.csv", base_station_density as i32);
         let path = Path::new(&name);
         let file = File::create(path).expect("create csv");
         let mut csv_writer = Writer::from_writer(file);
@@ -63,7 +63,7 @@ fn main() {
 
     // Plot SVG if requested
     if args.iter().any(|a| a == "--plot-svg") {
-        let name = format!("output/ccdf_{}_{}.svg", seed, base_station_density * 1000.0);
+        let name = format!("output/ccdf_{}_per_km2.svg", base_station_density);
         let root = SVGBackend::new(&name, (800, 600)).into_drawing_area();
         root.fill(&WHITE).unwrap();
         let y_minimum = ccdf_y.iter().cloned().fold(f64::INFINITY, f64::min);
