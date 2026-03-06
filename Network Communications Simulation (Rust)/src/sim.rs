@@ -50,21 +50,23 @@ pub fn generate_manhattan(
     let mut ave_counts = Vec::with_capacity(num_avenues);
 
     if create_base_stations {
-        let mean_bs = (lambda_base * size).max(0.0);
-        let poisson_bs = if mean_bs > 0.0 { Some(Poisson::new(mean_bs).unwrap()) } else { None };
-        for &ave in &avenues {
+        let mean_base_stations_total = (lambda_base * size * size / 1e6).max(0.0);
+        let num_roads = avenues.len() + streets.len();
+        let mean_per_road = if num_roads > 0 { mean_base_stations_total / num_roads as f64 } else { 0.0 };
+        let poisson_bs = if mean_per_road > 0.0 { Some(Poisson::new(mean_per_road).unwrap()) } else { None };
+        for &avenue in &avenues {
             let count = poisson_bs.as_ref().map(|p| p.sample(&mut rng) as usize).unwrap_or(0);
             ave_counts.push(count);
             for _ in 0..count {
                 let y = rng.gen::<f64>() * size - size / 2.0;
-                base_stations.push(Point { x: ave, y });
+                base_stations.push(Point { x: avenue, y });
             }
         }
-        for &st in &streets {
+        for &street in &streets {
             let count = poisson_bs.as_ref().map(|p| p.sample(&mut rng) as usize).unwrap_or(0);
             for _ in 0..count {
                 let x = rng.gen::<f64>() * size - size / 2.0;
-                base_stations.push(Point { x, y: st });
+                base_stations.push(Point { x, y: street });
             }
         }
     } else {
