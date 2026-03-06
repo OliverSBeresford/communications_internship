@@ -1,4 +1,4 @@
-use network_comms_sim::{geom::Point, sim::{SimulationData, simulate_coverage_ccdf}};
+use network_comms_sim::{sim::{SimulationData, simulate_coverage_ccdf}};
 use std::fs::{File, create_dir_all};
 use std::path::Path;
 use csv::Writer;
@@ -13,31 +13,10 @@ fn main() {
     let street_density = 7.0 / 1000.0;
 
     // Right now, we are ignoring NLOS and diffraction for speed and tractability
-    let data = SimulationData {
-        source_power: 1.0,
-        receiver: Point { x: 0.0, y: 0.0 },
-        alpha: 4.0,
-        a: 1.0,
-        fading_mean: 1.0,
-        noise_power: 0.01,
-        base_stations: Vec::new(),
-        penetration_loss: 0.9,
-        avenues: Vec::new(),
-        streets: Vec::new(),
-        use_nlos: false,
-        use_diffraction: false,
-        size: grid_size,
-        path_loss_nlos: false,
-        diffraction_order: 0,
-        ave_counts: Vec::new(),
-        connect_to_nlos: false,
-        lambda_ave: avenue_density,
-        lambda_st: street_density,
-        lambda_base: 0.0, // Will vary this in the sweep
-        create_base_stations: true,
-        computation_nodes: 100,
-        threshold_db: 10.0,
-    };
+    let mut data: SimulationData = Default::default();
+    data.size = grid_size;
+    data.lambda_ave = avenue_density;
+    data.lambda_st = street_density;
 
     // Ensure output directory exists
     create_dir_all("output").expect("Failed to create output directory");
@@ -59,7 +38,7 @@ fn main() {
         // Calculate average SINR for this density
         let simulations = 1e4 as usize; // Use fewer simulations per density for speed
         let num_bins = 100;
-        let (coverage_x, coverage_y) = simulate_coverage_ccdf(&mut data_clone, simulations, num_bins, (base_station_density * 100.0) as u64, false);
+        let (coverage_x, coverage_y) = simulate_coverage_ccdf(&mut data_clone, simulations, num_bins, false);
         let threshold_bin_number = coverage_x.iter().position(|&bin_db| bin_db >= 10.0).unwrap_or(num_bins - 1);
         let coverage_at_threshold = coverage_y[threshold_bin_number];
 
@@ -67,7 +46,7 @@ fn main() {
         println!("Density {:.2}: coverage = {:.3}", base_station_density, coverage_at_threshold);
 
         (base_station_density, coverage_at_threshold)
-    }).collect();    
+    }).collect();
 
     // Write results to CSV
     let csv_name = "output/density_vs_coverage.csv";

@@ -11,8 +11,7 @@ fn main() {
     let grid_size = 1000.0;
     let avenue_density = 7.0 / 1000.0;
     let street_density = 7.0 / 1000.0;
-    let base_station_density = 1500.0 / 1000.0;
-    let seed = 42; // Seed for reproducibility
+    let base_station_density = 20.0;
 
     let mut data = SimulationData {
         source_power: 1.0,
