@@ -22,8 +22,8 @@ fn main() {
     create_dir_all("output").expect("Failed to create output directory");
 
     // Use par_iter() for parallel processing
-    let density_range: Vec<f64> = (0..=24)
-        .map(|i| 10f64.powf(-2.0 + (i as f64 * 2.0 / 24.0)))
+    let density_range: Vec<f64> = (0..=50)
+        .map(|i| 10f64.powf(-2.0 + (i as f64 * 6.0 / 50.0)))
         .collect();
 
     println!("Density range: {:?}", density_range);
@@ -36,7 +36,7 @@ fn main() {
         data_clone.lambda_base = base_station_density;
 
         // Calculate average SINR for this density
-        let simulations = 1e4 as usize; // Use fewer simulations per density for speed
+        let simulations = 1e5 as usize; // Use fewer simulations per density for speed
         let num_bins = 100;
         let (coverage_x, coverage_y) = simulate_coverage_ccdf(&mut data_clone, simulations, num_bins, false);
         let threshold_bin_number = coverage_x.iter().position(|&bin_db| bin_db >= 10.0).unwrap_or(num_bins - 1);

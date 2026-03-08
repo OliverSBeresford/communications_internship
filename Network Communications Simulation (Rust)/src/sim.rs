@@ -333,6 +333,13 @@ pub fn sinr_linear(data: &mut SimulationData) -> f64 {
     if sinr < 0.0 { 0.0 } else { sinr }
 }
 
+
+/// Simulate CCDF curve for SINR in dB for the current layout and parameters, placing the user at (0,0) and calculating contributions from all base stations based on LOS, NLOS, and diffraction conditions.
+/// Returns a tuple of (coverage_x, coverage_y) where coverage_x is the vector of SINR bin edges in dB and coverage_y is the corresponding CCDF values.
+/// - `data`: The simulation data containing the layout and parameters for the simulation.
+/// - `simulations`: The number of simulation iterations to run for averaging the CCDF curve
+/// - `num_bins`: The number of bins to use for the CCDF curve (e.g., 100).
+/// - `progress_bar`: Whether to display a progress bar during the simulation.
 pub fn simulate_coverage_ccdf(data: &mut SimulationData, simulations: usize, num_bins: usize, progress_bar: bool) -> (Vec<f64>, Vec<f64>) {
     let mut results_db: Vec<f64> = Vec::with_capacity(simulations);
 
@@ -384,7 +391,7 @@ pub fn simulate_average_sinr(data: &mut SimulationData, simulations: usize) -> f
 pub fn simulate_sinr_vs_density(data: &mut SimulationData, simulations: usize) -> Vec<(f64, f64)> {
     // Sweep across base station densities on a logarithmic grid (1e-3 to 1)
     let density_range: Vec<f64> = (0..=24)
-        .map(|i| 10f64.powf(-0.3 + i as f64 * (2.3 / 24.0)))
+        .map(|i| 10f64.powf(-0.3 + i as f64 * (4.3 / 24.0)))
         .collect();
     let mut results: Vec<(f64, f64)> = Vec::new();
 
