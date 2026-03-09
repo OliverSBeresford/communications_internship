@@ -39,7 +39,7 @@ fn main() {
         use_diffraction: enable_nlos_and_diffraction,
         size: grid_size,
         path_loss_nlos: true,
-        diffraction_order: if enable_nlos_and_diffraction { 1 } else { 0 },
+        diffraction_order: 1,
         ave_counts: Vec::new(),
         connect_to_nlos: enable_nlos_and_diffraction,
         lambda_ave: avenue_density,
