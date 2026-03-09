@@ -217,14 +217,14 @@ impl Default for SimulationData {
             fading_mean: 1.0,
             noise_power: 4e-15, // -114 dBmW noise floor
             base_stations: Vec::new(),
-            penetration_loss: 0.9,
+            penetration_loss: 0.1, // 10 dB penetration loss
             avenues: Vec::new(),
             streets: Vec::new(),
             use_nlos: false,
             use_diffraction: false,
             size: 5000.0, // 5km x 5km area
             path_loss_nlos: false,
-            diffraction_order: 0,
+            diffraction_order: 1,
             ave_counts: Vec::new(),
             connect_to_nlos: false,
             lambda_ave: 7.0 / 1000.0,
@@ -315,13 +315,11 @@ pub fn sinr_linear(data: &mut SimulationData) -> f64 {
             total_interference += power;
             if power > useful_power { useful_power = power; }
         } else if data.use_nlos {
-            dbg!(&data);
             let power = power_nlos_linear(&mut rng, &data, base_station);
             total_interference += power;
             if power > useful_power && data.connect_to_nlos { useful_power = power; }
         }
         if !same_street && data.diffraction_order > 0 && data.use_diffraction && base_idx < num_avenue_bases {
-            dbg!(&data);
             let power = diffraction_power_linear(&data, base_station);
             total_interference += power;
             if power > useful_power && data.connect_to_nlos { useful_power = power; }
