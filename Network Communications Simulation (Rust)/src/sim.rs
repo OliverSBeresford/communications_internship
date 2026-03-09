@@ -403,6 +403,25 @@ pub fn simulate_average_sinr(data: &mut SimulationData, simulations: usize) -> f
     10.0 * mean_linear.log10()
 }
 
+/// Returns the fraction of simulations where the SINR is above a specified threshold in dB, simulating the same way as `simulate_coverage_ccdf` but counting how many times the SINR exceeds the threshold instead of calculating the full CCDF curve.
+/// - `data`: The simulation data containing the layout and parameters for the simulation.
+/// - `simulations`: The number of simulation iterations to run for averaging the result.
+/// - `threshold_db`: The SINR threshold in dB to compare against.
+pub fn sinr_above_threshold(data: &mut SimulationData, simulations: usize, threshold_db: f64) -> f64 {
+    let threshold_linear = 10f64.powf(threshold_db / 10.0);
+    let count_above_threshold = (0..simulations)
+        .into_par_iter()
+        .map(|_| {
+            let mut local_data = data.clone();
+            local_data.generate_layout();
+            let sinr = sinr_linear(&mut local_data);
+            if sinr >= threshold_linear { 1 } else { 0 }
+        })
+        .sum::<usize>();
+
+    count_above_threshold as f64 / simulations as f64
+}
+
 /// Simulate average SINR as a function of base station density, sweeping over a range of densities and returning the results as a vector of (density, average_sinr_db) pairs.
 /// - `data`: A mutable reference to the simulation data, which will be updated with different base station densities.
 /// - `simulations`: The number of simulation iterations to run for each density point.
