@@ -1,4 +1,4 @@
-use network_comms_sim::{sim::{SimulationData, simulate_coverage_ccdf}};
+use network_comms_sim::{sim::{SimulationData, simulate_coverage_ccdf}, geom::Point};
 use std::fs::{File, create_dir_all};
 use std::path::Path;
 use csv::Writer;
@@ -13,10 +13,32 @@ fn main() {
     let street_density = 7.0 / 1000.0;
 
     // Right now, we are ignoring NLOS and diffraction for speed and tractability
-    let mut data: SimulationData = Default::default();
-    data.size = grid_size;
-    data.lambda_ave = avenue_density;
-    data.lambda_st = street_density;
+    let data = SimulationData {
+        source_power: 1.0,
+        receiver: Point { x: 0.0, y: 0.0 },
+        alpha: 4.0,
+        a: 1.0,
+        fading_mean: 1.0,
+        noise_power: 4e-15, // -114 dBmW noise floor
+        base_stations: Vec::new(),
+        penetration_loss: 0.1, // 10 dB penetration loss
+        avenues: Vec::new(),
+        streets: Vec::new(),
+        use_nlos: true,
+        use_diffraction: true,
+        size: grid_size,
+        path_loss_nlos: true,
+        diffraction_order: 1,
+        ave_counts: Vec::new(),
+        connect_to_nlos: true,
+        lambda_ave: avenue_density,
+        lambda_st: street_density,
+        lambda_base: 0.0, // Will vary this in the sweep
+        create_base_stations: true,
+        computation_nodes: 100,
+        threshold_db: 10.0,
+        small_scale_fading: true,
+    };
 
     // Ensure output directory exists
     create_dir_all("output").expect("Failed to create output directory");
@@ -36,7 +58,7 @@ fn main() {
         data_clone.lambda_base = base_station_density;
 
         // Calculate average SINR for this density
-        let simulations = 1e5 as usize; // Use fewer simulations per density for speed
+        let simulations = 1e4 as usize; // Use fewer simulations per density for speed
         let num_bins = 100;
         let (coverage_x, coverage_y) = simulate_coverage_ccdf(&mut data_clone, simulations, num_bins, false);
         let threshold_bin_number = coverage_x.iter().position(|&bin_db| bin_db >= 10.0).unwrap_or(num_bins - 1);
@@ -49,8 +71,8 @@ fn main() {
     }).collect();
 
     // Write results to CSV
-    let csv_name = "output/density_vs_coverage.csv";
-    let csv_path = Path::new(csv_name);
+    let csv_name = &format!("output/density_vs_coverage_{}.csv", data.use_nlos);
+    let csv_path = Path::new(&csv_name);
     let csv_file = File::create(csv_path).expect("create csv");
     let mut csv_writer = Writer::from_writer(csv_file);
     csv_writer.write_record(["base_station_density", "coverage"]).unwrap();
@@ -61,7 +83,7 @@ fn main() {
     println!("Wrote {} points to {}", results.len(), csv_name);
 
     // Plot results as SVG
-    let svg_name = "output/density_vs_coverage.svg";
+    let svg_name = &format!("output/density_vs_coverage_{}.svg", data.use_nlos);
     let root = SVGBackend::new(svg_name, (800, 600)).into_drawing_area();
     root.fill(&WHITE).unwrap();
 
