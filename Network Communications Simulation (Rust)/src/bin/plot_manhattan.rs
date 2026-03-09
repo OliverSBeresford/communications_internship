@@ -1,4 +1,4 @@
-use network_comms_sim::{sim::generate_manhattan, viz::plot_manhattan_layout};
+use network_comms_sim::{sim::generate_manhattan, visualization::plot_manhattan_layout};
 use std::fs::create_dir_all;
 
 fn main() {
