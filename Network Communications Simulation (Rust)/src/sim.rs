@@ -168,6 +168,7 @@ pub struct SimulationData {
     // optimization-related
     pub computation_nodes: usize, // number of points per road for fitness
     pub threshold_db: f64,        // threshold in dB for fitness
+    pub small_scale_fading: bool,    // whether to include small scale fading in the simulation
 }
 
 impl SimulationData {
@@ -233,6 +234,7 @@ impl Default for SimulationData {
             create_base_stations: true,
             computation_nodes: 100,
             threshold_db: 10.0,
+            small_scale_fading: true,
         }
     }
 }
@@ -272,17 +274,23 @@ pub fn num_roads_crossed(data: &SimulationData, transmitter: Point) -> i32 {
 pub fn power_los_linear(rng: &mut impl Rng, data: &SimulationData, transmitter: Point) -> f64 {
     let distance = euclidean_distance(data.receiver, transmitter);
     let path_loss = data.a * distance.powf(-data.alpha);
-    let received_power = data.source_power * small_scale_fading_exp(rng, data.fading_mean) * path_loss;
+    let mut received_power = data.source_power * path_loss;
+    if data.small_scale_fading {
+        received_power *= small_scale_fading_exp(rng, data.fading_mean);
+    }
     received_power.min(data.source_power)
 }
 
 pub fn power_nlos_linear(rng: &mut impl Rng, data: &SimulationData, transmitter: Point) -> f64 {
     let building_count = 1 + num_roads_crossed(data, transmitter);
-    let mut received_power = data.source_power * small_scale_fading_exp(rng, data.fading_mean)
+    let mut received_power = data.source_power
         * data.penetration_loss.powi(building_count);
     if data.path_loss_nlos {
         let distance = euclidean_distance(data.receiver, transmitter);
         received_power *= data.a * distance.powf(-data.alpha);
+    }
+    if data.small_scale_fading {
+        received_power *= small_scale_fading_exp(rng, data.fading_mean);
     }
     received_power.min(data.source_power)
 }

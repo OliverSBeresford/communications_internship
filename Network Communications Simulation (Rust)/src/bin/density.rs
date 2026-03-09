@@ -36,6 +36,7 @@ fn main() {
         create_base_stations: true,
         computation_nodes: 100,
         threshold_db: 10.0,
+        small_scale_fading: true,
     };
 
     // Ensure output directory exists

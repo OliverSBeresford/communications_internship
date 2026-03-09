@@ -64,6 +64,7 @@ fn main() {
         create_base_stations: false,
         computation_nodes: 100,
         threshold_db: 10.0,
+        small_scale_fading: true,
     };
 
     // Initial fitness evaluation
