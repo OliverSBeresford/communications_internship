@@ -94,15 +94,6 @@ fn main() {
         .y_desc("Probability")
         .draw().unwrap();
     
-    // Plot NLOS+Diffraction curve in red
-    chart.draw_series(plotters::series::LineSeries::new(
-        ccdf_x_nlos.iter().zip(ccdf_y_nlos.iter()).map(|(&x_val,&y_val)|(x_val,y_val)), 
-        &RED
-    ))
-    .unwrap()
-    .label("NLOS + Diffraction")
-    .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
-    
     // Plot LOS only curve in blue
     chart.draw_series(plotters::series::LineSeries::new(
         ccdf_x_los.iter().zip(ccdf_y_los.iter()).map(|(&x_val,&y_val)|(x_val,y_val)), 
@@ -111,6 +102,16 @@ fn main() {
     .unwrap()
     .label("LOS Only")
     .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &BLUE));
+    
+
+    // Plot NLOS+Diffraction curve in red
+    chart.draw_series(plotters::series::LineSeries::new(
+        ccdf_x_nlos.iter().zip(ccdf_y_nlos.iter()).map(|(&x_val,&y_val)|(x_val,y_val)), 
+        &RED
+    ))
+    .unwrap()
+    .label("NLOS + Diffraction")
+    .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED)); 
     
     chart.configure_series_labels()
         .background_style(&WHITE.mix(0.8))
