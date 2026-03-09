@@ -1,4 +1,5 @@
-use network_comms_sim::{sim::{SimulationData, simulate_coverage_ccdf}, geom::Point};
+use network_comms_sim::{geom::Point, sim::{SimulationData, sinr_above_threshold}};
+use std::env;
 use std::fs::{File, create_dir_all};
 use std::path::Path;
 use csv::Writer;
@@ -7,12 +8,22 @@ use plotters_svg::SVGBackend;
 use rayon::prelude::*;
 
 fn main() {
+    // Single mode flag: --nlos enables both NLOS and diffraction.
+    let args: Vec<String> = env::args().collect();
+    if args.iter().any(|a| a == "-h" || a == "--help") {
+        println!("Usage: {} [--nlos]", args[0]);
+        println!("  --nlos   Enable both NLOS and diffraction models");
+        println!("           (default without flag is LOS-only)");
+        return;
+    }
+    let enable_nlos_and_diffraction = args.iter().any(|a| a == "--nlos");
+
     // Randomly generate Manhattan layout (Poisson PPP) similar to manhattan.m
     let grid_size = 1000.0;
     let avenue_density = 7.0 / 1000.0;
     let street_density = 7.0 / 1000.0;
 
-    // Right now, we are ignoring NLOS and diffraction for speed and tractability
+    // Toggle NLOS and diffraction together from the CLI flag.
     let data = SimulationData {
         source_power: 1.0,
         receiver: Point { x: 0.0, y: 0.0 },
@@ -24,13 +35,13 @@ fn main() {
         penetration_loss: 0.1, // 10 dB penetration loss
         avenues: Vec::new(),
         streets: Vec::new(),
-        use_nlos: true,
-        use_diffraction: true,
+        use_nlos: enable_nlos_and_diffraction,
+        use_diffraction: enable_nlos_and_diffraction,
         size: grid_size,
         path_loss_nlos: true,
-        diffraction_order: 1,
+        diffraction_order: if enable_nlos_and_diffraction { 1 } else { 0 },
         ave_counts: Vec::new(),
-        connect_to_nlos: true,
+        connect_to_nlos: enable_nlos_and_diffraction,
         lambda_ave: avenue_density,
         lambda_st: street_density,
         lambda_base: 0.0, // Will vary this in the sweep
@@ -42,6 +53,9 @@ fn main() {
 
     // Ensure output directory exists
     create_dir_all("output").expect("Failed to create output directory");
+
+    let mode_name = if enable_nlos_and_diffraction { "nlos" } else { "los" };
+    println!("Running density CCDF in {} mode", mode_name);
 
     // Use par_iter() for parallel processing
     let density_range: Vec<f64> = (0..=50)
@@ -58,11 +72,9 @@ fn main() {
         data_clone.lambda_base = base_station_density;
 
         // Calculate average SINR for this density
-        let simulations = 1e4 as usize; // Use fewer simulations per density for speed
-        let num_bins = 100;
-        let (coverage_x, coverage_y) = simulate_coverage_ccdf(&mut data_clone, simulations, num_bins, false);
-        let threshold_bin_number = coverage_x.iter().position(|&bin_db| bin_db >= 10.0).unwrap_or(num_bins - 1);
-        let coverage_at_threshold = coverage_y[threshold_bin_number];
+        let simulations = 1e5 as usize; // Use fewer simulations per density for speed
+        let threshold_db = 15.0; // SINR threshold in dB for coverage
+        let coverage_at_threshold = sinr_above_threshold(&mut data_clone, simulations, threshold_db);
 
         // Print progress for this density
         println!("Density {:.2}: coverage = {:.3}", base_station_density, coverage_at_threshold);
@@ -71,7 +83,7 @@ fn main() {
     }).collect();
 
     // Write results to CSV
-    let csv_name = &format!("output/density_vs_coverage_{}.csv", data.use_nlos);
+    let csv_name = &format!("output/density_vs_coverage_{}.csv", mode_name);
     let csv_path = Path::new(&csv_name);
     let csv_file = File::create(csv_path).expect("create csv");
     let mut csv_writer = Writer::from_writer(csv_file);
@@ -83,7 +95,7 @@ fn main() {
     println!("Wrote {} points to {}", results.len(), csv_name);
 
     // Plot results as SVG
-    let svg_name = &format!("output/density_vs_coverage_{}.svg", data.use_nlos);
+    let svg_name = &format!("output/density_vs_coverage_{}.svg", mode_name);
     let root = SVGBackend::new(svg_name, (800, 600)).into_drawing_area();
     root.fill(&WHITE).unwrap();
 
