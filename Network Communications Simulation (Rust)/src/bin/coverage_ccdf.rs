@@ -32,8 +32,8 @@ fn main() {
     data.lambda_st = street_density;
     data.lambda_base = base_station_density;
 
-    let simulations = 1e4 as usize;
-    let num_bins = simulations / 200;
+    let simulations = 1e6 as usize;
+    let num_bins = 500;
     
     // Run simulation with NLOS and diffraction
     data.use_nlos = true;
