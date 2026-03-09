@@ -7,11 +7,10 @@ pub fn plot_manhattan_layout(layout: &ManhattanLayout, size: f64, output_path: &
     let root = SVGBackend::new(output_path, (1000, 1000)).into_drawing_area();
     root.fill(&WHITE)?;
 
-    let margin = size * 0.1;
-    let x_min = -size / 2.0 - margin;
-    let x_max = size / 2.0 + margin;
-    let y_min = -size / 2.0 - margin;
-    let y_max = size / 2.0 + margin;
+    let x_min = -size / 2.0;
+    let x_max = size / 2.0;
+    let y_min = -size / 2.0;
+    let y_max = size / 2.0;
 
     let mut chart = ChartBuilder::on(&root)
         .caption("Manhattan Network Layout", ("sans-serif", 30))
@@ -29,7 +28,7 @@ pub fn plot_manhattan_layout(layout: &ManhattanLayout, size: f64, output_path: &
     for &ave in &layout.avenues {
         chart.draw_series(std::iter::once(PathElement::new(
             vec![(ave, -size / 2.0), (ave, size / 2.0)],
-            ShapeStyle::from(&BLUE).stroke_width(1),
+            ShapeStyle::from(&BLACK).stroke_width(1),
         )))?;
     }
 
@@ -37,7 +36,7 @@ pub fn plot_manhattan_layout(layout: &ManhattanLayout, size: f64, output_path: &
     for &st in &layout.streets {
         chart.draw_series(std::iter::once(PathElement::new(
             vec![(-size / 2.0, st), (size / 2.0, st)],
-            ShapeStyle::from(&GREEN).stroke_width(1),
+            ShapeStyle::from(&BLACK).stroke_width(1),
         )))?;
     }
 
