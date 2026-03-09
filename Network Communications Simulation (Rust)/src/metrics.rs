@@ -1,46 +1,5 @@
 use core::panic;
 
-use crate::geom::Point;
-use crate::rf::{power_los_dbm, power_nlos_dbm, small_scale_fading_db, ChannelParams};
-use rand::prelude::*;
-
-/// Convert dBm (decibel-milliwatts) to mW (milliwatts) and vice versa
-pub fn dbm_to_mw(dbm: f64) -> f64 { 10f64.powf(dbm / 10.0) }
-pub fn mw_to_dbm(mw: f64) -> f64 { 10.0 * mw.log10() }
-
-/// Calculate Signal-to-Interference-plus-Noise Ratio (SINR) in dB
-pub fn sinr_db(signal_dbm: f64, interference_dbm_list: &[f64], noise_dbm: f64) -> f64 {
-    let signal_mw = dbm_to_mw(signal_dbm);
-    let noise_mw = dbm_to_mw(noise_dbm);
-    let interference_mw: f64 = interference_dbm_list.iter().map(|&x| dbm_to_mw(x)).sum();
-    let sinr = signal_mw / (interference_mw + noise_mw);
-    10.0 * sinr.log10()
-}
-
-/// Types of links: Line-of-Sight (LOS) or Non-Line-of-Sight (NLOS)
-pub enum LinkType { LOS, NLOS }
-
-pub struct BaseStation {
-    pub pos: Point,
-    pub tx_power_dbm: f64,
-}
-
-/// Calculate received power in dBm at a user from a base station over a specified link type
-pub fn received_power_dbm(
-    rng: &mut impl Rng,
-    user: Point,
-    base_station: &BaseStation,
-    link: LinkType,
-    channel_params: &ChannelParams,
-) -> f64 {
-    let distance = ((user.x - base_station.pos.x).powi(2) + (user.y - base_station.pos.y).powi(2)).sqrt();
-    let base_power = match link {
-        LinkType::LOS => power_los_dbm(base_station.tx_power_dbm, distance, channel_params),
-        LinkType::NLOS => power_nlos_dbm(base_station.tx_power_dbm, distance, channel_params),
-    };
-    base_power + small_scale_fading_db(rng, channel_params.shadowing_std_db)
-}
-
 // Compute CCDF of provided values with fixed number of bins.
 pub fn ccdf(values: &[f64], num_bins: usize) -> (Vec<f64>, Vec<f64>) {
     assert!(num_bins > 1);
