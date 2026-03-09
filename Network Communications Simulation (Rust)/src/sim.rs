@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use statrs::distribution::{ContinuousCDF, Exp, Poisson};
 use rand::distributions::Distribution;
 use indicatif::{ProgressBar, ProgressStyle};
+use rayon::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct ManhattanLayout {
@@ -347,8 +348,6 @@ pub fn sinr_linear(data: &mut SimulationData) -> f64 {
 /// - `num_bins`: The number of bins to use for the CCDF curve (e.g., 100).
 /// - `progress_bar`: Whether to display a progress bar during the simulation.
 pub fn simulate_coverage_ccdf(data: &mut SimulationData, simulations: usize, num_bins: usize, progress_bar: bool) -> (Vec<f64>, Vec<f64>) {
-    let mut results_db: Vec<f64> = Vec::with_capacity(simulations);
-
     // Progress bar for simulation iterations
     let pb = ProgressBar::new(simulations as u64);
     if progress_bar {
@@ -357,17 +356,26 @@ pub fn simulate_coverage_ccdf(data: &mut SimulationData, simulations: usize, num
             .progress_chars("=>-"));
     }
 
-    for _ in 0..simulations {
-        // Regenerate a fresh Manhattan layout each simulation
-        data.generate_layout();
+    // Use parallel iteration to run simulations concurrently
+    let results_db: Vec<f64> = (0..simulations)
+        .into_par_iter()
+        .map(|_| {
+            // Clone the data structure for this thread
+            let mut local_data = data.clone();
+            
+            // Regenerate a fresh Manhattan layout for this simulation
+            local_data.generate_layout();
 
-        // Calculate SINR for this simulation iteration
-        let sinr = sinr_linear(data);
-        results_db.push(10.0 * sinr.log10());
+            // Calculate SINR for this simulation iteration
+            let sinr = sinr_linear(&mut local_data);
+            let result_db = 10.0 * sinr.log10();
 
-        // update progress bar
-        if progress_bar { pb.inc(1); }
-    }
+            // Update progress bar (thread-safe)
+            if progress_bar { pb.inc(1); }
+            
+            result_db
+        })
+        .collect();
 
     if progress_bar { pb.finish_with_message("CCDF simulation complete"); }
 
@@ -375,16 +383,20 @@ pub fn simulate_coverage_ccdf(data: &mut SimulationData, simulations: usize, num
 }
 
 pub fn simulate_average_sinr(data: &mut SimulationData, simulations: usize) -> f64 {
-    let mut results_linear: Vec<f64> = Vec::with_capacity(simulations);
+    // Use parallel iteration to run simulations concurrently
+    let results_linear: Vec<f64> = (0..simulations)
+        .into_par_iter()
+        .map(|_| {
+            // Clone the data structure for this thread
+            let mut local_data = data.clone();
+            
+            // Regenerate a fresh Manhattan layout for this simulation
+            local_data.generate_layout();
 
-    for _ in 0..simulations {
-        // Regenerate a fresh Manhattan layout each simulation
-        data.generate_layout();
-
-        // Calculate SINR for this simulation iteration
-        let sinr = sinr_linear(data);
-        results_linear.push(sinr);
-    }
+            // Calculate SINR for this simulation iteration
+            sinr_linear(&mut local_data)
+        })
+        .collect();
 
     // Return mean SINR in dB
     let mean_linear = results_linear.iter().sum::<f64>() / results_linear.len() as f64;
