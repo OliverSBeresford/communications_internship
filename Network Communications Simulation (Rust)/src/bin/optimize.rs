@@ -1,4 +1,4 @@
-use network_comms_sim::{geom::Point, opt::{best_candidates, fitness_value}, sim::{generate_manhattan, SimulationData}};
+use network_comms_sim::{geom::Point, optimization::{best_candidates, fitness_value}, sim::{generate_manhattan, SimulationData}};
 
 fn main() {
     // Initialize data using random Manhattan grid (MPLP - Manhattan Poisson Line Process)
