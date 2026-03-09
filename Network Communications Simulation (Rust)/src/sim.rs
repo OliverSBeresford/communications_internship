@@ -223,7 +223,7 @@ impl Default for SimulationData {
             use_nlos: false,
             use_diffraction: false,
             size: 5000.0, // 5km x 5km area
-            path_loss_nlos: false,
+            path_loss_nlos: true,
             diffraction_order: 1,
             ave_counts: Vec::new(),
             connect_to_nlos: false,
