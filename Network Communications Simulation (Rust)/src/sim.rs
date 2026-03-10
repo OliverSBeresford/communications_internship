@@ -219,7 +219,7 @@ impl Default for SimulationData {
             fading_mean: 1.0,
             noise_power: 4e-15, // -114 dBmW noise floor
             base_stations: Vec::new(),
-            penetration_loss: 0.1, // 10 dB penetration loss
+            penetration_loss: 0.01, // 20 dB penetration loss
             avenues: Vec::new(),
             streets: Vec::new(),
             use_nlos: false,

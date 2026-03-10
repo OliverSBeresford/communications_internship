@@ -20,7 +20,7 @@ fn main() {
         fading_mean: 1.0,
         noise_power: 0.01,
         base_stations: Vec::new(),
-        penetration_loss: 0.9,
+        penetration_loss: 0.01,
         avenues: Vec::new(),
         streets: Vec::new(),
         use_nlos: false,
