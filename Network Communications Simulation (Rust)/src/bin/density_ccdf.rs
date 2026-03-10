@@ -16,7 +16,7 @@ fn main() {
         println!("           (default without flag is LOS-only)");
         return;
     }
-    let enable_nlos_and_diffraction = args.iter().any(|a| a == "--nlos");
+    let enable_nlos = args.iter().any(|a| a == "--nlos");
 
     // Randomly generate Manhattan layout (Poisson PPP) similar to manhattan.m
     let grid_size = 1000.0;
@@ -32,16 +32,16 @@ fn main() {
         fading_mean: 1.0,
         noise_power: 4e-15, // -114 dBmW noise floor
         base_stations: Vec::new(),
-        penetration_loss: 0.01, // 20 dB penetration loss
+        penetration_loss: 0.00158, // 20 dB penetration loss
         avenues: Vec::new(),
         streets: Vec::new(),
-        use_nlos: enable_nlos_and_diffraction,
-        use_diffraction: enable_nlos_and_diffraction,
+        use_nlos: enable_nlos,
+        use_diffraction: false, // Turn off diffraction for now to isolate NLOS effects
         size: grid_size,
         path_loss_nlos: true,
         diffraction_order: 1,
         ave_counts: Vec::new(),
-        connect_to_nlos: enable_nlos_and_diffraction,
+        connect_to_nlos: false,
         lambda_ave: avenue_density,
         lambda_st: street_density,
         lambda_base: 0.0, // Will vary this in the sweep
@@ -54,7 +54,7 @@ fn main() {
     // Ensure output directory exists
     create_dir_all("output").expect("Failed to create output directory");
 
-    let mode_name = if enable_nlos_and_diffraction { "nlos" } else { "los" };
+    let mode_name = if enable_nlos { "nlos" } else { "los" };
     println!("Running density CCDF in {} mode", mode_name);
 
     // Use par_iter() for parallel processing
