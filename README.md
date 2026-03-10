@@ -60,7 +60,7 @@ Greedy optimization for base station placement:
 ### visualization.rs - Visualization
 SVG generation for visual analysis:
 - **plot_manhattan_layout()**: Renders Manhattan grid with avenues (vertical), streets (horizontal), base stations, and receiver
-- Generates publication-quality SVG plots with proper scaling and labels
+- Generates SVG plots with scaling and labels
 
 ## Quick Start
 
