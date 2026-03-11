@@ -2,7 +2,7 @@ use network_comms_sim::{geom::Point, optimization::{best_candidates, fitness_val
 
 fn main() {
     // Initialize data using random Manhattan grid (MPLP - Manhattan Poisson Line Process)
-    let grid_size = 500.0;
+    let grid_size = 1000.0;
     let avenue_density = 7.0 / 1000.0;
     let street_density = 7.0 / 1000.0;
     let base_station_density = 13.0;
@@ -16,7 +16,7 @@ fn main() {
     println!("Generated MPLP grid: {} avenues, {} streets", avenues.len(), streets.len());
 
     // Determine budget of base stations, in this case based on density per unit length of roads
-    let target_deployment_count = ((grid_size * base_station_density) * (avenues.len() + streets.len()) as f64).round() as usize;
+    let target_deployment_count = (grid_size * grid_size * base_station_density / 1e6).round() as usize;
 
     let base_spacing_distance = 20.0;
     let candidates_per_road = (grid_size / base_spacing_distance).round() as usize;
@@ -46,24 +46,24 @@ fn main() {
         alpha: 4.0,
         a: 1.0,
         fading_mean: 1.0,
-        noise_power: 0.0,
+        noise_power: 1e-14,
         base_stations: current_bs(&candidate_positions, &selection_mask),
         penetration_loss: 0.1,
         avenues: avenues.clone(),
         streets: streets.clone(),
         use_nlos: true,
-        use_diffraction: true,
+        use_diffraction: false,
         size: grid_size,
         path_loss_nlos: true,
         diffraction_order: 1,
         ave_counts: vec![avenues.len()],
-        connect_to_nlos: true,
+        connect_to_nlos: false,
         lambda_ave: avenue_density,
         lambda_st: street_density,
         lambda_base: base_station_density,
         create_base_stations: false,
         computation_nodes: 100,
-        threshold_db: 10.0,
+        threshold_db: 15.0,
         small_scale_fading: true,
     };
 
