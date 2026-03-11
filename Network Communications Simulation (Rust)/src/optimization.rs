@@ -1,6 +1,18 @@
 use crate::geom::Point;
 use crate::sim::{SimulationData, power_los_linear, power_nlos_linear, diffraction_power_linear};
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OptimizationSnapshot {
+    pub data: SimulationData,
+    pub candidate_positions: Vec<Point>,
+    pub selection_mask: Vec<bool>,
+    pub best_fitness: i64,
+    pub target_deployment_count: usize,
+    pub base_spacing_distance: f64,
+    pub seed: u64,
+}
 use rand::seq::IteratorRandom;
 
 /// Evaluate fitness of current base station deployment by counting points with SINR above threshold
