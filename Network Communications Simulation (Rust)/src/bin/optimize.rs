@@ -12,7 +12,7 @@ fn main() {
     let avenue_density = 7.0 / 1000.0;
     let street_density = 7.0 / 1000.0;
     let base_station_density = 20.0;
-    let seed = 42; // Seed for reproducibility
+    let seed = 1; // Seed for reproducibility
     
     // Generate random Manhattan layout using Poisson Point Process
     let layout = generate_manhattan(grid_size, avenue_density, street_density, 0.0, seed, false);

@@ -43,7 +43,7 @@ fn main() {
     data.size = size;
 
     // Generate a random Manhattan layout
-    let layout = generate_manhattan(data.size, data.lambda_ave, data.lambda_st, data.lambda_base, 12, true);
+    let layout = generate_manhattan(data.size, data.lambda_ave, data.lambda_st, data.lambda_base, 1, true);
 
     // Plot it with optional zoom
     let output_name = if let Some(zs) = zoom_size {
