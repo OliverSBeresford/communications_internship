@@ -1,4 +1,4 @@
-use network_comms_sim::{geom::Point, optimization::{best_candidates, fitness_value}, sim::{generate_manhattan, SimulationData}};
+use network_comms_sim::{geom::Point, optimization::{best_candidates, fitness_value}, sim::{ManhattanLayout, SimulationData, generate_manhattan}, visualization::plot_manhattan_layout_with_zoom};
 
 fn main() {
     // Initialize data using random Manhattan grid (MPLP - Manhattan Poisson Line Process)
@@ -95,6 +95,20 @@ fn main() {
     }
 
     println!("Final deployed: {}", data.base_stations.len());
+
+    plot_manhattan_layout_with_zoom(
+        &ManhattanLayout {
+            avenues,
+            streets,
+            base_stations: data.base_stations.clone(),
+            ave_counts: data.ave_counts.clone(),
+        },
+        data.size,
+        "output/manhattan_optimized.svg",
+        Some(0.0),
+        Some(0.0),
+        Some(data.size)
+    ).expect("Failed to plot optimized layout");
 }
 
 fn current_bs(candidates: &[Point], select: &[bool]) -> Vec<Point> {
