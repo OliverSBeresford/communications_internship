@@ -1,6 +1,7 @@
 use crate::geom::Point;
 use crate::sim::{SimulationData, power_los_linear, power_nlos_linear, diffraction_power_linear};
 use rayon::prelude::*;
+use rand::seq::IteratorRandom;
 
 /// Evaluate fitness of current base station deployment by counting points with SINR above threshold
 pub fn fitness_value(data: &SimulationData) -> i64 {
@@ -125,10 +126,64 @@ pub fn best_candidates(
     (best_activation_index, best_deactivation_index)
 }
 
-fn current_bs(candidates: &[Point], select: &[bool]) -> Vec<Point> {
+pub fn randomly_initialize_selection_mask(candidate_count: usize, target_count: usize) -> Vec<bool> {
+    let mut rng = rand::thread_rng();
+
+    let mut mask: Vec<bool> = vec![false; candidate_count];
+    (0..candidate_count).choose_multiple(&mut rng, target_count).into_iter().for_each(|i| mask[i] = true);
+    mask
+}
+
+pub fn current_bs(candidates: &[Point], select: &[bool]) -> Vec<Point> {
     candidates
         .iter()
         .zip(select.iter())
         .filter_map(|(&p, &s)| if s { Some(p) } else { None })
         .collect()
 }
+
+pub fn steepest_ascent_hill_climb(data: &mut SimulationData, candidate_positions: Vec<Point>, target_deployment_count: usize) -> (Vec<bool>, i64) {
+    println!("Initial deployed: {}", data.base_stations.len());
+
+    // Initial selection mask for base stations
+    let mut selection_mask = randomly_initialize_selection_mask(candidate_positions.len(), target_deployment_count);
+
+    // Initial fitness evaluation
+    let mut base_fitness = fitness_value(data);
+    // Store recent fitness values for convergence check (10 iterations, checking relative std dev)
+    let mut recent_fitness_values: Vec<f64> = vec![-f64::INFINITY; 10];
+
+    for iteration in 0..50 { // limited iterations for demo
+        // Identify best candidates to activate/deactivate
+        let (best_activation_idx, best_deactivation_idx) = best_candidates(data, &candidate_positions, &mut selection_mask, base_fitness);
+        selection_mask[best_activation_idx] = true;
+        selection_mask[best_deactivation_idx] = false;
+        data.base_stations = current_bs(&candidate_positions, &selection_mask);
+
+        // Re-evaluate fitness after adjustments
+        let new_fitness = fitness_value(data);
+        recent_fitness_values.remove(9);
+        recent_fitness_values.insert(0, new_fitness as f64);
+        println!("iter {} fitness {} -> {}", iteration, base_fitness, new_fitness);
+
+        base_fitness = new_fitness;
+
+        // Check for convergence based on relative standard deviation of recent fitness values
+        if recent_fitness_values.iter().all(|v| v.is_finite()) {
+            if let Some(relative_std_dev) = rel_std(&recent_fitness_values) {
+                if relative_std_dev < 0.05 { break; }
+            }
+        }
+    }
+    (selection_mask, base_fitness)
+}
+
+// Calculate relative standard deviation of a slice of f64 values
+pub fn rel_std(values: &[f64]) -> Option<f64> {
+    if values.is_empty() { return None; }
+    let average: f64 = values.iter().sum::<f64>() / values.len() as f64;
+    if average.abs() < 1e-12 { return None; }
+    let variance: f64 = values.iter().map(|value| (value - average).powi(2)).sum::<f64>() / values.len() as f64;
+    Some(variance.sqrt() / average.abs())
+}
+

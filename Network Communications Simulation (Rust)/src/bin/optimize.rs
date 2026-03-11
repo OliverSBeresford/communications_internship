@@ -1,8 +1,8 @@
-use network_comms_sim::{geom::Point, optimization::{best_candidates, fitness_value}, sim::{ManhattanLayout, SimulationData, generate_manhattan}, visualization::plot_manhattan_layout_with_zoom};
+use network_comms_sim::{geom::Point, optimization::{current_bs, steepest_ascent_hill_climb}, sim::{ManhattanLayout, SimulationData, generate_manhattan}, visualization::plot_manhattan_layout_with_zoom};
 
 fn main() {
     // Initialize data using random Manhattan grid (MPLP - Manhattan Poisson Line Process)
-    let grid_size = 1000.0;
+    let grid_size = 5000.0;
     let avenue_density = 7.0 / 1000.0;
     let street_density = 7.0 / 1000.0;
     let base_station_density = 13.0;
@@ -12,33 +12,6 @@ fn main() {
     let layout = generate_manhattan(grid_size, avenue_density, street_density, 0.0, seed, false);
     let avenues = layout.avenues;
     let streets = layout.streets;
-    
-    println!("Generated MPLP grid: {} avenues, {} streets", avenues.len(), streets.len());
-
-    // Determine budget of base stations, in this case based on density per unit length of roads
-    let target_deployment_count = (grid_size * grid_size * base_station_density / 1e6).round() as usize;
-
-    let base_spacing_distance = 20.0;
-    let candidates_per_road = (grid_size / base_spacing_distance).round() as usize;
-    // Generate candidate base station positions along avenues and streets
-    let mut candidate_positions: Vec<Point> = Vec::with_capacity((avenues.len() + streets.len()) * candidates_per_road);
-    for &avenue_x in &avenues {
-        for position_idx in 0..candidates_per_road {
-            let y_pos = -grid_size / 2.0 + position_idx as f64 * (grid_size / (candidates_per_road as f64 - 1.0));
-            candidate_positions.push(Point { x: avenue_x, y: y_pos });
-        }
-    }
-    for &street_y in &streets {
-        for position_idx in 0..candidates_per_road {
-            let x_pos = -grid_size / 2.0 + position_idx as f64 * (grid_size / (candidates_per_road as f64 - 1.0));
-            candidate_positions.push(Point { x: x_pos, y: street_y });
-        }
-    }
-
-    // Initial selection mask for base stations
-    let mut selection_mask = vec![false; candidate_positions.len()];
-    // deterministic initial selection: first N (mirrors MATLAB random choice if seeded separately)
-    for idx in 0..target_deployment_count.min(selection_mask.len()) { selection_mask[idx] = true; }
 
     let mut data = SimulationData {
         source_power: 1.0,
@@ -47,7 +20,7 @@ fn main() {
         a: 1.0,
         fading_mean: 1.0,
         noise_power: 1e-14,
-        base_stations: current_bs(&candidate_positions, &selection_mask),
+        base_stations: Vec::new(),
         penetration_loss: 0.1,
         avenues: avenues.clone(),
         streets: streets.clone(),
@@ -66,33 +39,46 @@ fn main() {
         threshold_db: 15.0,
         small_scale_fading: true,
     };
+    
+    println!("Generated MPLP grid: {} avenues, {} streets", avenues.len(), streets.len());
 
-    // Initial fitness evaluation
-    let mut base_fitness = fitness_value(&mut data);
-    // Store recent fitness values for convergence check (10 iterations, checking relative std dev)
-    let mut recent_fitness_values: Vec<f64> = vec![-f64::INFINITY; 10];
+    // Determine budget of base stations, in this case based on density per unit length of roads
+    let target_deployment_count = (grid_size * grid_size * base_station_density / 1e6).round() as usize;
 
-    for iteration in 0..50 { // limited iterations for demo
-        // Identify best candidates to activate/deactivate
-        let (best_activation_idx, best_deactivation_idx) = best_candidates(&mut data, &candidate_positions, &mut selection_mask, base_fitness);
-        selection_mask[best_activation_idx] = true;
-        selection_mask[best_deactivation_idx] = false;
-        data.base_stations = current_bs(&candidate_positions, &selection_mask);
-
-        // Re-evaluate fitness after adjustments
-        let new_fitness = fitness_value(&mut data);
-        recent_fitness_values.remove(9);
-        recent_fitness_values.insert(0, new_fitness as f64);
-        println!("iter {} fitness {} -> {}", iteration, base_fitness, new_fitness);
-
-        // Check for convergence based on relative standard deviation of recent fitness values
-        if recent_fitness_values.iter().all(|v| v.is_finite()) {
-            if let Some(relative_std_dev) = rel_std(&recent_fitness_values) {
-                if relative_std_dev < 0.05 { break; }
-            }
+    let base_spacing_distance = 20.0;
+    let candidates_per_road = (grid_size / base_spacing_distance).round() as usize;
+    // Generate candidate base station positions along avenues and streets
+    let num_candidates: usize = (avenues.len() + streets.len()) * candidates_per_road;
+    let mut candidate_positions: Vec<Point> = Vec::with_capacity(num_candidates);
+    for &avenue_x in &avenues {
+        for position_idx in 0..candidates_per_road {
+            let y_pos = -grid_size / 2.0 + position_idx as f64 * (grid_size / (candidates_per_road as f64 - 1.0));
+            candidate_positions.push(Point { x: avenue_x, y: y_pos });
         }
-        base_fitness = new_fitness;
     }
+    for &street_y in &streets {
+        for position_idx in 0..candidates_per_road {
+            let x_pos = -grid_size / 2.0 + position_idx as f64 * (grid_size / (candidates_per_road as f64 - 1.0));
+            candidate_positions.push(Point { x: x_pos, y: street_y });
+        }
+    }
+
+    let mut final_mask: Vec<bool> = Vec::with_capacity(num_candidates);
+    let mut best_fitness: i64 = -1;
+
+    for i in 0..12 {
+        println!("Optimization iteration {}/12", i + 1);
+        let (selection_mask, fitness) = steepest_ascent_hill_climb(&mut data, candidate_positions.clone(), target_deployment_count);
+        println!("Final fitness: {}", fitness);
+        if fitness > best_fitness {
+            println!("New best fitness found: {} (previous {})", fitness, best_fitness);
+            final_mask = selection_mask;
+            best_fitness = fitness;
+        }
+    }
+
+    // Finalize base station deployment based on best selection mask
+    data.base_stations = current_bs(&candidate_positions, &final_mask);
 
     println!("Final deployed: {}", data.base_stations.len());
 
@@ -109,21 +95,4 @@ fn main() {
         Some(0.0),
         Some(data.size)
     ).expect("Failed to plot optimized layout");
-}
-
-fn current_bs(candidates: &[Point], select: &[bool]) -> Vec<Point> {
-    candidates
-        .iter()
-        .zip(select.iter())
-        .filter_map(|(&position, &is_selected)| if is_selected { Some(position) } else { None })
-        .collect()
-}
-
-// Calculate relative standard deviation of a slice of f64 values
-fn rel_std(values: &[f64]) -> Option<f64> {
-    if values.is_empty() { return None; }
-    let average: f64 = values.iter().sum::<f64>() / values.len() as f64;
-    if average.abs() < 1e-12 { return None; }
-    let variance: f64 = values.iter().map(|value| (value - average).powi(2)).sum::<f64>() / values.len() as f64;
-    Some(variance.sqrt() / average.abs())
 }
