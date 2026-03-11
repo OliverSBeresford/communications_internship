@@ -1,11 +1,17 @@
-use network_comms_sim::{geom::Point, optimization::{current_bs, steepest_ascent_hill_climb}, sim::{ManhattanLayout, SimulationData, generate_manhattan}, visualization::plot_manhattan_layout_with_zoom};
+use network_comms_sim::{
+    geom::Point,
+    optimization::{current_bs, steepest_ascent_hill_climb, OptimizationSnapshot},
+    sim::{ManhattanLayout, SimulationData, generate_manhattan},
+    visualization::plot_manhattan_layout_with_zoom,
+};
+use std::fs::{create_dir_all, File};
 
 fn main() {
     // Initialize data using random Manhattan grid (MPLP - Manhattan Poisson Line Process)
-    let grid_size = 5000.0;
+    let grid_size = 1000.0;
     let avenue_density = 7.0 / 1000.0;
     let street_density = 7.0 / 1000.0;
-    let base_station_density = 13.0;
+    let base_station_density = 20.0;
     let seed = 42; // Seed for reproducibility
     
     // Generate random Manhattan layout using Poisson Point Process
@@ -81,6 +87,23 @@ fn main() {
     data.base_stations = current_bs(&candidate_positions, &final_mask);
 
     println!("Final deployed: {}", data.base_stations.len());
+
+    create_dir_all("output").expect("Failed to create output directory");
+
+    // Save final deployment and full simulation configuration for reuse.
+    let snapshot = OptimizationSnapshot {
+        data: data.clone(),
+        candidate_positions: candidate_positions.clone(),
+        selection_mask: final_mask.clone(),
+        best_fitness,
+        target_deployment_count,
+        base_spacing_distance,
+        seed,
+    };
+    let snapshot_path = "output/optimized_deployment.json";
+    let snapshot_file = File::create(snapshot_path).expect("Failed to create optimization snapshot file");
+    serde_json::to_writer_pretty(snapshot_file, &snapshot).expect("Failed to write optimization snapshot JSON");
+    println!("Saved final deployment/config to {}", snapshot_path);
 
     plot_manhattan_layout_with_zoom(
         &ManhattanLayout {
