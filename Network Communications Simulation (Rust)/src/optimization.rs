@@ -1,26 +1,42 @@
 use crate::geom::Point;
-use crate::sim::{SimulationData};
-use rand::rngs::StdRng;
-use rand::SeedableRng;
+use crate::sim::{SimulationData, power_los_linear, power_nlos_linear, diffraction_power_linear};
+use rayon::prelude::*;
 
 /// Evaluate fitness of current base station deployment by counting points with SINR above threshold
-pub fn fitness_value(data: &mut SimulationData) -> i64 {
-    let mut total_coverage_points: i64 = 0;
-    for &avenue_x in &data.avenues {
-        for y_pos in linspace(-data.size / 2.0, data.size / 2.0, data.computation_nodes) {
-            data.receiver = Point { x: avenue_x, y: y_pos };
-            let sinr_db = single_point_sinr_db(&data);
-            if sinr_db > data.threshold_db { total_coverage_points += 1; }
-        }
-    }
-    for &street_y in &data.streets {
-        for x_pos in linspace(-data.size / 2.0, data.size / 2.0, data.computation_nodes) {
-            data.receiver = Point { x: x_pos, y: street_y };
-            let sinr_db = single_point_sinr_db(&data);
-            if sinr_db > data.threshold_db { total_coverage_points += 1; }
-        }
-    }
-    total_coverage_points
+pub fn fitness_value(data: &SimulationData) -> i64 {
+    let samples = linspace(-data.size / 2.0, data.size / 2.0, data.computation_nodes);
+
+    let avenue_coverage_points: i64 = data
+        .avenues
+        .par_iter()
+        .map(|&avenue_x| {
+            samples
+                .iter()
+                .filter(|&&y_pos| {
+                    let sinr_linear = single_point_sinr_linear(data, Point { x: avenue_x, y: y_pos });
+                    let sinr_db = 10.0 * sinr_linear.log10();
+                    sinr_db > data.threshold_db
+                })
+                .count() as i64
+        })
+        .sum();
+
+    let street_coverage_points: i64 = data
+        .streets
+        .par_iter()
+        .map(|&street_y| {
+            samples
+                .iter()
+                .filter(|&&x_pos| {
+                    let sinr_linear = single_point_sinr_linear(data, Point { x: x_pos, y: street_y });
+                    let sinr_db = 10.0 * sinr_linear.log10();
+                    sinr_db > data.threshold_db
+                })
+                .count() as i64
+        })
+        .sum();
+
+    avenue_coverage_points + street_coverage_points
 }
 
 /// Generate linearly spaced values between start and end
@@ -31,55 +47,40 @@ fn linspace(start: f64, end: f64, n: usize) -> Vec<f64> {
     (0..n).map(|i| start + i as f64 * step).collect()
 }
 
-/// Compute SINR at a single receiver point
-fn single_point_sinr_db(data: &SimulationData) -> f64 {
-    // Compute useful and interference powers similar to MATLAB SINR
+/// Calculates the Signal to Interference plus Noise Ratio (SINR) in linear scale for the current layout and parameters
+/// - `data`: The simulation data containing the layout and parameters for the simulation.
+/// - `receiver`: The point for which to calculate SINR.
+/// Returns the SINR value in linear scale for this simulation iteration.
+pub fn single_point_sinr_linear(data: &SimulationData, receiver: Point) -> f64 {
     let mut useful_power = 0.0;
     let mut total_interference = 0.0;
     let num_avenue_bases: usize = if data.diffraction_order > 0 && !data.ave_counts.is_empty() {
         data.ave_counts.iter().sum()
     } else { 0 };
 
-    // Iterate over all base stations to compute their contributions
-    for (candidate_idx, &base_station) in data.base_stations.iter().enumerate() {
-        let same_street = base_station.x == data.receiver.x || base_station.y == data.receiver.y;
-        // Line-of-sight contribution
+    let mut rng = rand::thread_rng();
+
+    for (base_idx, &base_station) in data.base_stations.iter().enumerate() {
+        let same_street = base_station.x == receiver.x || base_station.y == receiver.y;
         if same_street {
-            let mut rng = seeded_rng(data, base_station, candidate_idx as u64);
-            let power_linear = super::sim::power_los_linear(&mut rng, data, base_station);
-            total_interference += power_linear;
-            if power_linear > useful_power { useful_power = power_linear; }
-        } 
-        // Non-line-of-sight contribution (building penetration)
-        else if data.use_nlos {
-            let mut rng = seeded_rng(data, base_station, candidate_idx as u64);
-            let power_linear = super::sim::power_nlos_linear(&mut rng, data, base_station);
-            total_interference += power_linear;
-            if power_linear > useful_power && data.connect_to_nlos { useful_power = power_linear; }
+            let power = power_los_linear(&mut rng, &data, base_station);
+            total_interference += power;
+            if power > useful_power { useful_power = power; }
+        } else if data.use_nlos {
+            let power = power_nlos_linear(&mut rng, &data, base_station);
+            total_interference += power;
+            if power > useful_power && data.connect_to_nlos { useful_power = power; }
         }
-        // Diffraction contribution
-        if !same_street && data.diffraction_order > 0 && candidate_idx < num_avenue_bases {
-            let power_linear = super::sim::diffraction_power_linear(data, base_station);
-            total_interference += power_linear;
-            if power_linear > useful_power && data.connect_to_nlos { useful_power = power_linear; }
+        if !same_street && data.diffraction_order > 0 && data.use_diffraction && base_idx < num_avenue_bases {
+            let power = diffraction_power_linear(&data, base_station);
+            total_interference += power;
+            if power > useful_power && data.connect_to_nlos { useful_power = power; }
         }
     }
-    // Calculate SINR in dB
-    if useful_power == 0.0 { return f64::NEG_INFINITY; }
+
+    if useful_power == 0.0 { return 0.0; }
     let sinr = useful_power / (data.noise_power + total_interference - useful_power);
-    10.0 * sinr.log10()
-}
-
-
-/// Create a seeded RNG based on simulation parameters and base station position
-fn seeded_rng(data: &SimulationData, base_station: Point, index: u64) -> StdRng {
-    let seed = data.receiver.x.to_bits()
-        ^ data.receiver.y.to_bits()
-        ^ base_station.x.to_bits()
-        ^ base_station.y.to_bits()
-        ^ (data.base_stations.len() as u64)
-        ^ index;
-    StdRng::seed_from_u64(seed)
+    if sinr < 0.0 { 0.0 } else { sinr }
 }
 
 /// Identify the best candidate base stations to activate or deactivate for fitness improvement
