@@ -305,10 +305,10 @@ pub fn diffraction_power_linear(data: &SimulationData, transmitter: Point) -> f6
     received_power.min(data.source_power)
 }
 
-pub fn sinr_linear(data: &mut SimulationData) -> f64 {
-    // Place user at (0,0) each time, ensuring y=0 street exists from generator
-    data.receiver = Point { x: 0.0, y: 0.0 };
-
+/// Calculates the Signal to Interference plus Noise Ratio (SINR) in linear scale for the current layout and parameters
+/// - `data`: The simulation data containing the layout and parameters for the simulation.
+/// Returns the SINR value in linear scale for this simulation iteration.
+pub fn sinr_linear(data: &SimulationData) -> f64 {
     let mut useful_power = 0.0;
     let mut total_interference = 0.0;
     let num_avenue_bases: usize = if data.diffraction_order > 0 && !data.ave_counts.is_empty() {
@@ -339,7 +339,6 @@ pub fn sinr_linear(data: &mut SimulationData) -> f64 {
     let sinr = useful_power / (data.noise_power + total_interference - useful_power);
     if sinr < 0.0 { 0.0 } else { sinr }
 }
-
 
 /// Simulate CCDF curve for SINR in dB for the current layout and parameters, placing the user at (0,0) and calculating contributions from all base stations based on LOS, NLOS, and diffraction conditions.
 /// Returns a tuple of (coverage_x, coverage_y) where coverage_x is the vector of SINR bin edges in dB and coverage_y is the corresponding CCDF values.
